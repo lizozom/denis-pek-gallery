@@ -24,8 +24,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const username = credentials.username as string;
         const password = credentials.password as string;
 
-        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-        const base64Hash = process.env.ADMIN_PASSWORD_HASH;
+        const adminUsername = (process.env.ADMIN_USERNAME || 'admin').trim();
+        const base64Hash = process.env.ADMIN_PASSWORD_HASH?.trim();
 
         console.log('Auth attempt');
         console.log('Submitted username:', JSON.stringify(username));
