@@ -28,7 +28,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: PhotoPageProps): Promise<Metadata> {
   const { slug, locale } = await params as { slug: string; locale: Locale };
-  const image = getImageBySlug(slug);
+  const image = await getImageBySlug(slug);
   const t = getTranslations(locale);
 
   if (!image) {
@@ -63,7 +63,7 @@ export async function generateMetadata({ params }: PhotoPageProps): Promise<Meta
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
   const { slug, locale } = await params as { slug: string; locale: Locale };
-  const image = getImageBySlug(slug);
+  const image = await getImageBySlug(slug);
   const t = getTranslations(locale);
 
   if (!image) {
