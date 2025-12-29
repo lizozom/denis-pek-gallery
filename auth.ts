@@ -25,14 +25,17 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         const password = credentials.password as string;
 
         const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
+        const base64Hash = process.env.ADMIN_PASSWORD_HASH;
 
         console.log('Auth attempt for username:', username);
 
-        if (!adminPasswordHash) {
+        if (!base64Hash) {
           console.error('ADMIN_PASSWORD_HASH not configured');
           return null;
         }
+
+        // Decode the base64 encoded hash (stored in base64 to avoid $ character issues)
+        const adminPasswordHash = Buffer.from(base64Hash, 'base64').toString('utf-8');
 
         if (username !== adminUsername) {
           console.error('Username does not match');

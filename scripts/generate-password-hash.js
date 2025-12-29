@@ -13,7 +13,13 @@ bcrypt.hash(password, saltRounds, (err, hash) => {
     console.error('Error generating hash:', err);
     process.exit(1);
   }
+
+  // Encode the hash in base64 to avoid issues with $ characters in env vars
+  const base64Hash = Buffer.from(hash).toString('base64');
+
   console.log('\nPassword hash generated successfully!');
+  console.log('\nOriginal hash:', hash);
   console.log('\nAdd this to your .env.local file:');
-  console.log(`ADMIN_PASSWORD_HASH=${hash}\n`);
+  console.log(`ADMIN_PASSWORD_HASH=${base64Hash}\n`);
+  console.log('(Hash is base64 encoded to avoid $ character issues in environment variables)');
 });
