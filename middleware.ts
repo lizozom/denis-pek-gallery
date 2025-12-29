@@ -4,14 +4,17 @@ import { auth } from './auth';
 
 export default auth((request) => {
   const pathname = request.nextUrl.pathname;
+  const isLoggedIn = !!request.auth?.user;
 
   // Skip admin routes from i18n handling
   if (pathname.startsWith('/admin')) {
     // Check auth for admin routes (except login page)
-    if (!pathname.startsWith('/admin/login') && !request.auth) {
-      const loginUrl = new URL('/admin/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
+    if (!pathname.startsWith('/admin/login')) {
+      if (!isLoggedIn) {
+        const loginUrl = new URL('/admin/login', request.url);
+        loginUrl.searchParams.set('callbackUrl', pathname);
+        return NextResponse.redirect(loginUrl);
+      }
     }
     return NextResponse.next();
   }
@@ -36,7 +39,9 @@ export default auth((request) => {
 
 export const config = {
   matcher: [
-    // Skip all internal paths (_next, api, static files)
-    '/((?!_next|api|.*\\..*).*)',
+    // Match all paths except static files, _next, and api routes (except auth)
+    '/((?!_next/static|_next/image|favicon.ico|.*\\..*|api/(?!auth)).*)',
+    // Explicitly include auth API routes
+    '/api/auth/:path*',
   ],
 };
