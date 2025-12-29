@@ -21,7 +21,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
           return null;
         }
 
-        const { username, password } = credentials;
+        const username = credentials.username as string;
+        const password = credentials.password as string;
 
         const adminUsername = process.env.ADMIN_USERNAME || 'admin';
         const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
