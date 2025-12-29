@@ -6,6 +6,11 @@ export default auth((request) => {
   const pathname = request.nextUrl.pathname;
   const isLoggedIn = !!request.auth?.user;
 
+  // Skip API routes entirely (including auth)
+  if (pathname.startsWith('/api')) {
+    return NextResponse.next();
+  }
+
   // Skip admin routes from i18n handling
   if (pathname.startsWith('/admin')) {
     // Check auth for admin routes (except login page)
