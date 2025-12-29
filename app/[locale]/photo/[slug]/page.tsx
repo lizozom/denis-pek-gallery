@@ -8,7 +8,7 @@ import { getTranslations } from "@/lib/translations";
 
 interface PhotoPageProps {
   params: Promise<{
-    locale: Locale;
+    locale: string;
     slug: string;
   }>;
 }
@@ -27,7 +27,7 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PhotoPageProps): Promise<Metadata> {
-  const { slug, locale } = await params;
+  const { slug, locale } = await params as { slug: string; locale: Locale };
   const image = getImageBySlug(slug);
   const t = getTranslations(locale);
 
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: PhotoPageProps): Promise<Meta
 }
 
 export default async function PhotoPage({ params }: PhotoPageProps) {
-  const { slug, locale } = await params;
+  const { slug, locale } = await params as { slug: string; locale: Locale };
   const image = getImageBySlug(slug);
   const t = getTranslations(locale);
 

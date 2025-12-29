@@ -20,9 +20,9 @@ export async function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
-  const { locale } = await params;
+  const { locale } = await params as { locale: Locale };
   const t = getTranslations(locale);
 
   return {
@@ -68,9 +68,9 @@ export default async function LocaleLayout({
   params,
 }: Readonly<{
   children: React.ReactNode;
-  params: Promise<{ locale: Locale }>;
+  params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params;
+  const { locale } = await params as { locale: Locale };
   const dir = locale === 'he' ? 'rtl' : 'ltr';
 
   return (
