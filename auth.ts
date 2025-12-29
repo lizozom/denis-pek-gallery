@@ -23,19 +23,24 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
         const { username, password } = credentials;
 
-        // Check against hardcoded credentials for now
-        // TODO: Fix env variable loading issue with bcrypt hashes containing $
-        const adminUsername = 'admin';
-        const adminPassword = 'admin123';
+        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+        const adminPasswordHash = process.env.ADMIN_PASSWORD_HASH;
 
         console.log('Auth attempt for username:', username);
+
+        if (!adminPasswordHash) {
+          console.error('ADMIN_PASSWORD_HASH not configured');
+          return null;
+        }
 
         if (username !== adminUsername) {
           console.error('Username does not match');
           return null;
         }
 
-        if (password !== adminPassword) {
+        const isValidPassword = await bcrypt.compare(password, adminPasswordHash);
+
+        if (!isValidPassword) {
           console.error('Invalid password');
           return null;
         }
