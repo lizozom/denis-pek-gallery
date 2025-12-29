@@ -4,11 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { galleryImages, titleToSlug } from "@/lib/gallery";
 import { useState, useEffect, useRef } from "react";
+import { Locale } from "@/lib/i18n";
+import { getTranslations } from "@/lib/translations";
+import LanguageToggle from "@/app/components/LanguageToggle";
+import { useParams } from "next/navigation";
 
 const GRID_GAP = 0; // Default gap between images in pixels
 const IMAGES_PER_LOAD = 20; // Number of images to load at a time
 
 export default function Home() {
+  const params = useParams();
+  const locale = params.locale as Locale;
+  const t = getTranslations(locale);
+
   const [gap] = useState(GRID_GAP);
   const [visibleCount, setVisibleCount] = useState(IMAGES_PER_LOAD);
   const observerRef = useRef<HTMLDivElement>(null);
@@ -36,10 +44,15 @@ export default function Home() {
     <div className="min-h-screen bg-white">
       <header className="border-b border-gray-200">
         <div className="max-w-full px-4 sm:px-6 lg:px-8 py-8">
-          <h1 className="text-4xl font-bold text-gray-900">Denis Pek Gallery</h1>
-          <p className="mt-2 text-lg text-gray-600">
-            Exploring the world through the lens
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900">{t.siteTitle}</h1>
+              <p className="mt-2 text-lg text-gray-600">
+                {t.siteDescription}
+              </p>
+            </div>
+            <LanguageToggle currentLocale={locale} />
+          </div>
         </div>
       </header>
 
@@ -48,27 +61,27 @@ export default function Home() {
           <ul className="flex gap-8 py-4">
             <li>
               <button className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors">
-                All
+                {t.nav.all}
               </button>
             </li>
             <li>
               <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Landscape
+                {t.nav.landscape}
               </button>
             </li>
             <li>
               <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Portrait
+                {t.nav.portrait}
               </button>
             </li>
             <li>
               <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Urban
+                {t.nav.urban}
               </button>
             </li>
             <li>
               <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                Nature
+                {t.nav.nature}
               </button>
             </li>
           </ul>
@@ -92,7 +105,7 @@ export default function Home() {
                 .map((image) => (
                   <Link
                     key={image.id}
-                    href={`/photo/${titleToSlug(image.title)}`}
+                    href={`/${locale}/photo/${titleToSlug(image.title)}`}
                     className="group cursor-pointer block relative overflow-hidden"
                   >
                     <Image
@@ -119,7 +132,7 @@ export default function Home() {
 
         {visibleCount < galleryImages.length && (
           <div className="text-center py-8">
-            <p className="text-gray-500">Loading more...</p>
+            <p className="text-gray-500">{t.loading}</p>
           </div>
         )}
       </main>
@@ -127,7 +140,7 @@ export default function Home() {
       <footer className="border-t border-gray-200 mt-16">
         <div className="max-w-full px-4 sm:px-6 lg:px-8 py-8">
           <p className="text-center text-sm text-gray-600">
-            &copy; {new Date().getFullYear()} Denis Pek. All rights reserved.
+            &copy; {new Date().getFullYear()} Denis Pek. {t.footer.copyright}
           </p>
         </div>
       </footer>
