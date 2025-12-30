@@ -1,0 +1,339 @@
+'use client';
+
+import { useState } from 'react';
+import { Locale } from '@/lib/i18n';
+import { getTranslations } from '@/lib/translations';
+import { submitContactForm } from '../actions';
+
+interface ContactFormProps {
+  locale: Locale;
+}
+
+interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  projectType: string;
+  message: string;
+}
+
+interface FormErrors {
+  name?: string;
+  email?: string;
+  phone?: string;
+  projectType?: string;
+  message?: string;
+}
+
+export default function ContactForm({ locale }: ContactFormProps) {
+  const t = getTranslations(locale);
+  const [formData, setFormData] = useState<FormData>({
+    name: '',
+    email: '',
+    phone: '',
+    projectType: '',
+    message: '',
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const validateForm = (): boolean => {
+    const newErrors: FormErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = t.contact.validation.nameRequired;
+    }
+
+    if (!formData.email.trim()) {
+      newErrors.email = t.contact.validation.emailRequired;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = t.contact.validation.emailInvalid;
+    }
+
+    if (!formData.phone.trim()) {
+      newErrors.phone = t.contact.validation.phoneRequired;
+    }
+
+    if (!formData.projectType) {
+      newErrors.projectType = t.contact.validation.projectTypeRequired;
+    }
+
+    if (!formData.message.trim()) {
+      newErrors.message = t.contact.validation.messageRequired;
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    try {
+      const result = await submitContactForm(formData);
+
+      if (result.success) {
+        setSubmitStatus('success');
+        // Reset form
+        setFormData({
+          name: '',
+          email: '',
+          phone: '',
+          projectType: '',
+          message: '',
+        });
+        setErrors({});
+      } else {
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setSubmitStatus('error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Clear error for this field when user starts typing
+    if (errors[name as keyof FormErrors]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  return (
+    <div>
+      {/* Success Message */}
+      {submitStatus === 'success' && (
+        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-6 h-6 text-green-600 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <h3 className="font-semibold text-green-900">
+                {t.contact.success.title}
+              </h3>
+              <p className="text-sm text-green-700 mt-1">
+                {t.contact.success.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error Message */}
+      {submitStatus === 'error' && (
+        <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg
+              className="w-6 h-6 text-red-600 flex-shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <div>
+              <h3 className="font-semibold text-red-900">
+                {t.contact.error.title}
+              </h3>
+              <p className="text-sm text-red-700 mt-1">
+                {t.contact.error.description}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Name */}
+        <div>
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-900 mb-2"
+          >
+            {t.contact.form.name}
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder={t.contact.form.namePlaceholder}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors ${
+              errors.name ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+          )}
+        </div>
+
+        {/* Email */}
+        <div>
+          <label
+            htmlFor="email"
+            className="block text-sm font-medium text-gray-900 mb-2"
+          >
+            {t.contact.form.email}
+          </label>
+          <input
+            type="email"
+            id="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder={t.contact.form.emailPlaceholder}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors ${
+              errors.email ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+          )}
+        </div>
+
+        {/* Phone */}
+        <div>
+          <label
+            htmlFor="phone"
+            className="block text-sm font-medium text-gray-900 mb-2"
+          >
+            {t.contact.form.phone}
+          </label>
+          <input
+            type="tel"
+            id="phone"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder={t.contact.form.phonePlaceholder}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors ${
+              errors.phone ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors.phone && (
+            <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+          )}
+        </div>
+
+        {/* Project Type */}
+        <div>
+          <label
+            htmlFor="projectType"
+            className="block text-sm font-medium text-gray-900 mb-2"
+          >
+            {t.contact.form.projectType}
+          </label>
+          <select
+            id="projectType"
+            name="projectType"
+            value={formData.projectType}
+            onChange={handleChange}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors ${
+              errors.projectType ? 'border-red-500' : 'border-gray-300'
+            }`}
+          >
+            <option value="">{t.contact.form.projectTypePlaceholder}</option>
+            <option value="architectural">{t.contact.projectTypes.architectural}</option>
+            <option value="interior">{t.contact.projectTypes.interior}</option>
+            <option value="realEstate">{t.contact.projectTypes.realEstate}</option>
+            <option value="commercial">{t.contact.projectTypes.commercial}</option>
+            <option value="other">{t.contact.projectTypes.other}</option>
+          </select>
+          {errors.projectType && (
+            <p className="mt-1 text-sm text-red-600">{errors.projectType}</p>
+          )}
+        </div>
+
+        {/* Message */}
+        <div>
+          <label
+            htmlFor="message"
+            className="block text-sm font-medium text-gray-900 mb-2"
+          >
+            {t.contact.form.message}
+          </label>
+          <textarea
+            id="message"
+            name="message"
+            value={formData.message}
+            onChange={handleChange}
+            placeholder={t.contact.form.messagePlaceholder}
+            rows={6}
+            className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors resize-none ${
+              errors.message ? 'border-red-500' : 'border-gray-300'
+            }`}
+          />
+          {errors.message && (
+            <p className="mt-1 text-sm text-red-600">{errors.message}</p>
+          )}
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full px-6 py-4 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg
+                className="animate-spin h-5 w-5"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              {t.contact.form.submitting}
+            </>
+          ) : (
+            t.contact.form.submit
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}

@@ -38,7 +38,7 @@ export default function CategoryNav({
   };
 
   return (
-    <nav className="border-b border-gray-100 bg-white sticky top-[104px] sm:top-[96px] z-10">
+    <nav className="border-b border-gray-100 bg-white sticky top-[88px] z-10">
       <div className="max-w-full px-4 sm:px-6 lg:px-8">
         <ul className="flex gap-4 sm:gap-8 py-3 overflow-x-auto scrollbar-hide">
           {CATEGORIES.map((category) => {

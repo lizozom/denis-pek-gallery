@@ -5,6 +5,8 @@ import { getImageBySlug, getGalleryImages, titleToSlug } from "@/lib/gallery";
 import type { Metadata } from "next";
 import { Locale, locales } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
+import Navigation from "@/app/components/Navigation";
+import Footer from "@/app/components/Footer";
 
 interface PhotoPageProps {
   params: Promise<{
@@ -79,9 +81,11 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
     .slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div className="min-h-screen bg-white flex flex-col">
+      <Navigation locale={locale} />
+
+      <main className="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
           <Link
             href={`/${locale}`}
             className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors"
@@ -102,9 +106,6 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
             {t.photo.backToGallery}
           </Link>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           <div className="relative aspect-square overflow-hidden rounded-lg bg-gray-100">
             <Image
@@ -187,13 +188,7 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
         )}
       </main>
 
-      <footer className="border-t border-gray-200 mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-sm text-gray-600">
-            &copy; {new Date().getFullYear()} Denis Pek. {t.footer.copyright}
-          </p>
-        </div>
-      </footer>
+      <Footer locale={locale} />
     </div>
   );
 }
