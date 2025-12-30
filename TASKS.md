@@ -1,0 +1,177 @@
+# Denis Pekerman Gallery - Implementation Tasks
+
+## PHASE 0: Database Setup 🗄️
+
+- [x] Initialize PostgreSQL database (`npm run db:init`)
+- [x] Verify database connection is working
+- [x] Check all environment variables are configured
+- [x] Seed sample data (`npm run db:seed`) - 28 photos
+- [x] Check that all manage operations are functional (create \ edit \ delete \ reorder)
+
+## PHASE 1: Admin UI Polish & Image Upload 🎨
+
+### Polish management system ✅ COMPLETED
+ - [x]  Edit form opens in a overlay modal with image preview
+ - [x]  Photo additions and edits reflect in the UI instantly (optimistic updates)
+ - [x]  Photos display in descending order (newest first)
+ - [x]  Delete should just hide the photo from the gallery by default. There can be a checkbox that if you check it - only then it will delete the photo completely.
+ - [x]  Polish PhotoCard component with better styling and loading states
+ - [x]  Polish PhotoManagement UI with stats dashboard and improved layout
+ - [x]  Add gradient background and better visual hierarchy
+ - [x]  Create PhotoStats component showing total and category breakdowns
+ - [x]  Add icons to all buttons and improve empty states
+
+ ### Polish gallery display ✅ COMPLETED
+ - [x] Show the images with the highest position (newest) first
+ - [x] Support different screen sizes by reducing num of cols to 2 or to 1 (4→3→2→1 responsive grid)
+ - [x] If gallery images fail to load, don't show any fallback. Just show a graceful error message.
+ - [x] Use better typography for image name (in overlay with gradient)
+ - [x] Added loading skeletons with shimmer animation
+ - [x] Added staggered fade-in animations
+ - [x] Added sticky header and navigation
+ - [x] Make the gallery filters work (client side filtering with category counts)
+
+### Image Upload System
+- [ ] Create `/app/admin/photos/upload-actions.ts` - Server actions for Vercel Blob upload
+- [ ] Create `/app/admin/photos/components/ImageUploader.tsx` - File upload component
+  - [ ] Drag-and-drop file upload
+  - [ ] Browse file button
+  - [ ] Image preview before upload
+  - [ ] Progress indicator
+  - [ ] File validation (type, size)
+- [ ] Update `/app/admin/photos/components/PhotoForm.tsx` to use ImageUploader
+- [ ] Add `getCategories()` function to `/lib/db.ts`
+- [ ] Update `/next.config.ts` to add Vercel Blob to remotePatterns
+
+## PHASE 2: Portfolio Enhancements 🖼️
+
+### Gallery Layout Improvements ✅ COMPLETED
+- [x] Create `/app/components/GalleryImage.tsx` - Individual gallery image component with loading states
+- [x] Create `/app/components/ImageSkeleton.tsx` - Loading skeleton component
+- [x] Update `/app/[locale]/page.tsx` gallery layout
+  - [x] Better responsive grid (4/3/2/1 cols)
+  - [x] Lazy loading with Intersection Observer
+  - [x] Loading skeleton
+  - [x] Better image aspect ratio handling
+  - [x] Hover effects improvements (gradient overlay with title and category)
+  - [x] Fade-in animations (staggered fade-in effect)
+  - [x] Sticky header and navigation
+  - [x] Empty state handling
+  - [x] Better spacing and gap between images
+
+### Enhanced Photo Detail Pages
+- [ ] Create `/app/components/Breadcrumbs.tsx` - RTL-aware breadcrumbs
+- [ ] Create `/app/components/PhotoNavigation.tsx` - Next/Previous arrows
+- [ ] Update `/app/[locale]/photo/[slug]/page.tsx`
+  - [ ] Add breadcrumbs
+  - [ ] Next/Previous navigation (arrows + keyboard)
+  - [ ] Share button (WhatsApp)
+  - [ ] Better related photos algorithm
+  - [ ] Larger image with zoom
+  - [ ] Better mobile layout
+
+### Loading States & Animations
+- [ ] Add skeleton loaders for images
+- [ ] Implement blur-up image loading
+- [ ] Add smooth transitions
+- [ ] Add loading spinners
+- [ ] Add progress indicators
+
+## PHASE 3: Basic SEO Foundation 🎯
+
+- [ ] Create `/lib/config.ts` - Site configuration
+  - [ ] SITE_CONFIG with url, name
+  - [ ] SOCIAL_LINKS with Instagram, Facebook, Behance
+- [ ] Create `/lib/schema.ts` - Schema.org generators
+  - [ ] `generateOrganizationSchema()`
+  - [ ] `generateLocalBusinessSchema()`
+  - [ ] `generatePersonSchema()`
+  - [ ] `generateImageObjectSchema()`
+  - [ ] `generateBreadcrumbSchema()`
+- [ ] Update `/lib/translations.ts` with SEO keywords
+  - [ ] English: architectural photographer Israel keywords
+  - [ ] Hebrew: צלם אדריכלות ישראל keywords
+- [ ] Update `/app/[locale]/layout.tsx`
+  - [ ] Add metadataBase
+  - [ ] Add canonical URLs
+  - [ ] Add hreflang tags
+  - [ ] Inject Organization schema
+
+## PHASE 4: Navigation & Footer 🧭
+
+- [ ] Create `/app/components/Navigation.tsx`
+  - [ ] Gallery link
+  - [ ] Language toggle
+  - [ ] Mobile hamburger menu
+  - [ ] Responsive design
+- [ ] Create `/app/components/Footer.tsx`
+  - [ ] Copyright
+  - [ ] Social links
+  - [ ] Clean design
+- [ ] Update all pages to use Navigation and Footer components
+
+## PHASE 5: Contact & About Pages 📞 (LATER)
+
+- [ ] Create `/app/[locale]/about/page.tsx`
+  - [ ] Professional bio
+  - [ ] Photo of Denis
+  - [ ] Expertise areas
+  - [ ] Client types served
+- [ ] Create `/app/[locale]/contact/page.tsx`
+  - [ ] Contact form (Name, Email, Phone, Project Type, Message)
+  - [ ] Form validation
+  - [ ] Success/error states
+- [ ] Create `/app/[locale]/contact/actions.ts` - Form submission
+- [ ] Create `/lib/email.ts` - Email utilities
+- [ ] Set up Resend for email delivery
+
+## PHASE 6: Advanced Features 🚀 (FUTURE)
+
+- [ ] Testimonials section
+- [ ] Calendly integration
+- [ ] WhatsApp floating button
+- [ ] Google Analytics
+- [ ] Dynamic OG images
+- [ ] Enhanced sitemap
+- [ ] Google Business Profile setup
+
+---
+
+## Quick Reference
+
+### Files to Create
+- `/lib/config.ts`
+- `/lib/schema.ts`
+- `/app/admin/photos/components/ImageUploader.tsx`
+- `/app/admin/photos/components/PhotoStats.tsx`
+- `/app/admin/photos/upload-actions.ts`
+- `/app/components/GalleryGrid.tsx`
+- `/app/components/Breadcrumbs.tsx`
+- `/app/components/PhotoNavigation.tsx`
+- `/app/components/Navigation.tsx`
+- `/app/components/Footer.tsx`
+
+### Files to Modify
+- `/lib/translations.ts`
+- `/lib/db.ts`
+- `/app/[locale]/layout.tsx`
+- `/app/[locale]/page.tsx`
+- `/app/[locale]/photo/[slug]/page.tsx`
+- `/app/admin/photos/components/PhotoManagement.tsx`
+- `/app/admin/photos/components/PhotoCard.tsx`
+- `/app/admin/photos/components/PhotoForm.tsx`
+- `/app/admin/photos/actions.ts`
+- `/next.config.ts`
+
+### Database Functions to Add
+```typescript
+// In /lib/db.ts
+export async function getCategories(): Promise<string[]>
+export async function getGalleryPhotosByCategory(category: string): Promise<GalleryImage[]>
+export async function getCategoryCounts(): Promise<Record<string, number>>
+```
+
+---
+
+## Current Status: Phase 0 - Database Setup
+**Next Action:** Run `npm run db:init` to initialize the database

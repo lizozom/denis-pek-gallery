@@ -1,53 +1,30 @@
-"use client";
-
-import Image from "next/image";
-import Link from "next/link";
-import { galleryImages, titleToSlug } from "@/lib/gallery";
-import { useState, useEffect, useRef } from "react";
 import { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
 import LanguageToggle from "@/app/components/LanguageToggle";
-import { useParams } from "next/navigation";
+import GalleryClient from "./components/GalleryClient";
+import { getGalleryImages } from "@/lib/gallery";
 
-const GRID_GAP = 0; // Default gap between images in pixels
-const IMAGES_PER_LOAD = 20; // Number of images to load at a time
+interface HomeProps {
+  params: Promise<{
+    locale: string;
+  }>;
+}
 
-export default function Home() {
-  const params = useParams();
-  const locale = params.locale as Locale;
+export default async function Home({ params }: HomeProps) {
+  const { locale } = await params as { locale: Locale };
   const t = getTranslations(locale);
 
-  const [gap] = useState(GRID_GAP);
-  const [visibleCount, setVisibleCount] = useState(IMAGES_PER_LOAD);
-  const observerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && visibleCount < galleryImages.length) {
-          setVisibleCount((prev) => Math.min(prev + IMAGES_PER_LOAD, galleryImages.length));
-        }
-      },
-      { threshold: 0.1 }
-    );
-
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
-
-    return () => observer.disconnect();
-  }, [visibleCount]);
-
-  const visibleImages = galleryImages.slice(0, visibleCount);
+  // Fetch images from database
+  const images = await getGalleryImages();
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="border-b border-gray-200">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-between">
+      <header className="border-b border-gray-100 bg-white sticky top-0 z-10 shadow-sm">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-gray-900">{t.siteTitle}</h1>
-              <p className="mt-2 text-lg text-gray-600">
+              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">{t.siteTitle}</h1>
+              <p className="mt-1 text-sm sm:text-base text-gray-600">
                 {t.siteDescription}
               </p>
             </div>
@@ -56,90 +33,11 @@ export default function Home() {
         </div>
       </header>
 
-      <nav className="border-b border-gray-200">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8">
-          <ul className="flex gap-8 py-4">
-            <li>
-              <button className="text-sm font-medium text-gray-900 hover:text-gray-600 transition-colors">
-                {t.nav.all}
-              </button>
-            </li>
-            <li>
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                {t.nav.landscape}
-              </button>
-            </li>
-            <li>
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                {t.nav.portrait}
-              </button>
-            </li>
-            <li>
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                {t.nav.urban}
-              </button>
-            </li>
-            <li>
-              <button className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors">
-                {t.nav.nature}
-              </button>
-            </li>
-          </ul>
-        </div>
-      </nav>
+      <GalleryClient images={images} locale={locale} />
 
-      <main className="w-full">
-        <div
-          className="flex"
-          style={{ gap: `${gap}px` }}
-        >
-          {/* Create 4 columns */}
-          {[0, 1, 2, 3].map((columnIndex) => (
-            <div
-              key={columnIndex}
-              className="flex-1 flex flex-col"
-              style={{ gap: `${gap}px` }}
-            >
-              {visibleImages
-                .filter((_, index) => index % 4 === columnIndex)
-                .map((image) => (
-                  <Link
-                    key={image.id}
-                    href={`/${locale}/photo/${titleToSlug(image.title)}`}
-                    className="group cursor-pointer block relative overflow-hidden"
-                  >
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      width={800}
-                      height={800}
-                      sizes="25vw"
-                      className="w-full h-auto block"
-                    />
-                    <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <h3 className="text-white text-2xl font-light tracking-wide px-6 text-center">
-                        {image.title}
-                      </h3>
-                    </div>
-                  </Link>
-                ))}
-            </div>
-          ))}
-        </div>
-
-        {/* Infinite scroll trigger */}
-        <div ref={observerRef} className="h-20 w-full" />
-
-        {visibleCount < galleryImages.length && (
-          <div className="text-center py-8">
-            <p className="text-gray-500">{t.loading}</p>
-          </div>
-        )}
-      </main>
-
-      <footer className="border-t border-gray-200 mt-16">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-8">
-          <p className="text-center text-sm text-gray-600">
+      <footer className="border-t border-gray-100 mt-16 bg-gray-50">
+        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-12">
+          <p className="text-center text-sm text-gray-500">
             &copy; {new Date().getFullYear()} Denis Pek. {t.footer.copyright}
           </p>
         </div>

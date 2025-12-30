@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { galleryImages, getImageBySlug, titleToSlug } from "@/lib/gallery";
+import { getImageBySlug, getGalleryImages, titleToSlug } from "@/lib/gallery";
 import type { Metadata } from "next";
 import { Locale, locales } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
@@ -14,9 +14,11 @@ interface PhotoPageProps {
 }
 
 export async function generateStaticParams() {
+  // Fetch images from database for static generation
+  const images = await getGalleryImages();
   const params = [];
   for (const locale of locales) {
-    for (const image of galleryImages) {
+    for (const image of images) {
       params.push({
         locale,
         slug: titleToSlug(image.title),
@@ -70,7 +72,9 @@ export default async function PhotoPage({ params }: PhotoPageProps) {
     notFound();
   }
 
-  const relatedImages = galleryImages
+  // Fetch all images to get related photos
+  const allImages = await getGalleryImages();
+  const relatedImages = allImages
     .filter((img) => img.category === image.category && img.id !== image.id)
     .slice(0, 3);
 

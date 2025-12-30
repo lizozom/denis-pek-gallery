@@ -46,6 +46,8 @@ export async function saveGalleryConfig(config: GalleryConfig): Promise<boolean>
     const blob = await put(GALLERY_CONFIG_FILENAME, JSON.stringify(config, null, 2), {
       access: 'public',
       contentType: 'application/json',
+      addRandomSuffix: false,
+      allowOverwrite: true,
     });
 
     console.log('Gallery config saved to blob:', blob.url);
@@ -174,6 +176,41 @@ export async function deleteGalleryImage(id: number): Promise<boolean> {
     return true;
   } catch (error) {
     console.error('Error deleting gallery image:', error);
+    return false;
+  }
+}
+
+/**
+ * Reorders gallery images based on an array of IDs
+ */
+export async function reorderGalleryImages(newOrder: number[]): Promise<boolean> {
+  try {
+    const config = await getGalleryConfig();
+
+    if (!config) {
+      console.error('Gallery config not found');
+      return false;
+    }
+
+    // Reorder images based on ID array
+    const reorderedImages = newOrder
+      .map(id => config.images.find(img => img.id === id))
+      .filter((img): img is GalleryImage => img !== undefined);
+
+    // Verify all images were found
+    if (reorderedImages.length !== config.images.length) {
+      console.error('Reorder failed: not all images were found in new order');
+      return false;
+    }
+
+    config.images = reorderedImages;
+    config.version += 1;
+    config.lastUpdated = new Date().toISOString();
+
+    await saveGalleryConfig(config);
+    return true;
+  } catch (error) {
+    console.error('Error reordering gallery images:', error);
     return false;
   }
 }

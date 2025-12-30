@@ -1,4 +1,4 @@
-import { getGalleryConfig } from './gallery-storage';
+import { getGalleryPhotos } from './db';
 
 export interface GalleryImage {
   id: number;
@@ -17,7 +17,7 @@ export function titleToSlug(title: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
-// Fallback images if blob storage is unavailable
+// Fallback images if database is unavailable
 const categories = ["Landscape", "Portrait", "Urban", "Nature"];
 const imageCount = 50;
 const aspectRatios = [
@@ -43,31 +43,19 @@ const fallbackImages: GalleryImage[] = Array.from({ length: imageCount }, (_, i)
   };
 });
 
-// Cache for gallery images
-let cachedImages: GalleryImage[] | null = null;
-let cacheTime: number | null = null;
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 /**
- * Fetches gallery images from Vercel Blob storage with caching
+ * Fetches gallery images from Vercel Postgres database
  */
 export async function getGalleryImages(): Promise<GalleryImage[]> {
-  // Return cached images if still valid
-  if (cachedImages && cacheTime && Date.now() - cacheTime < CACHE_DURATION) {
-    return cachedImages;
-  }
-
   try {
-    const config = await getGalleryConfig();
+    const photos = await getGalleryPhotos();
 
-    if (config && config.images.length > 0) {
-      cachedImages = config.images;
-      cacheTime = Date.now();
-      return config.images;
+    if (photos.length > 0) {
+      return photos;
     }
 
-    // Fallback to default images
-    console.warn('Using fallback images - blob storage returned empty config');
+    // Fallback to default images if database is empty
+    console.warn('Using fallback images - database returned no photos');
     return fallbackImages;
   } catch (error) {
     console.error('Error fetching gallery images:', error);
