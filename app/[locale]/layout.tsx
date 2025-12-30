@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Locale, locales } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
+import { SITE_CONFIG } from "@/lib/config";
+import { generateOrganizationSchema } from "@/lib/schema";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,18 +28,19 @@ export async function generateMetadata({
   const t = getTranslations(locale);
 
   return {
+    metadataBase: new URL(SITE_CONFIG.url),
     title: {
       default: t.siteTitle,
       template: `%s | ${t.siteTitle}`,
     },
     description: t.metaDescription,
     keywords: t.metaKeywords.split(', '),
-    authors: [{ name: "Denis Pek" }],
-    creator: "Denis Pek",
+    authors: [{ name: SITE_CONFIG.author.name }],
+    creator: SITE_CONFIG.author.name,
     openGraph: {
       type: "website",
       locale: locale === 'he' ? 'he_IL' : 'en_US',
-      url: "https://denispek.com",
+      url: SITE_CONFIG.url,
       siteName: t.siteTitle,
       title: t.siteTitle,
       description: t.metaDescription,
@@ -60,6 +63,14 @@ export async function generateMetadata({
       index: true,
       follow: true,
     },
+    alternates: {
+      canonical: `/${locale}`,
+      languages: {
+        'en': '/en',
+        'he': '/he',
+        'x-default': '/en',
+      },
+    },
   };
 }
 
@@ -72,12 +83,17 @@ export default async function LocaleLayout({
 }>) {
   const { locale } = await params as { locale: Locale };
   const dir = locale === 'he' ? 'rtl' : 'ltr';
+  const organizationSchema = generateOrganizationSchema();
 
   return (
     <html lang={locale} dir={dir}>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         {children}
       </body>
     </html>

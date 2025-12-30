@@ -30,6 +30,11 @@
  - [x] Added staggered fade-in animations
  - [x] Added sticky header and navigation
  - [x] Make the gallery filters work (client side filtering with category counts)
+ 
+ ### Remove reordering option (complicates logic)
+ - [ ] Get rid of the reorder option all together. 
+ - [ ] Remove it from all docs (other than here in tasks)
+ - [ ] Images should always show the newest ones first and that's it.
 
 ### Image Upload System
 - [ ] Create `/app/admin/photos/upload-actions.ts` - Server actions for Vercel Blob upload
@@ -70,32 +75,27 @@
   - [ ] Larger image with zoom
   - [ ] Better mobile layout
 
-### Loading States & Animations
-- [ ] Add skeleton loaders for images
-- [ ] Implement blur-up image loading
-- [ ] Add smooth transitions
-- [ ] Add loading spinners
-- [ ] Add progress indicators
+## PHASE 3: Basic SEO Foundation ✅ COMPLETED
 
-## PHASE 3: Basic SEO Foundation 🎯
-
-- [ ] Create `/lib/config.ts` - Site configuration
-  - [ ] SITE_CONFIG with url, name
-  - [ ] SOCIAL_LINKS with Instagram, Facebook, Behance
-- [ ] Create `/lib/schema.ts` - Schema.org generators
-  - [ ] `generateOrganizationSchema()`
-  - [ ] `generateLocalBusinessSchema()`
-  - [ ] `generatePersonSchema()`
-  - [ ] `generateImageObjectSchema()`
-  - [ ] `generateBreadcrumbSchema()`
-- [ ] Update `/lib/translations.ts` with SEO keywords
-  - [ ] English: architectural photographer Israel keywords
-  - [ ] Hebrew: צלם אדריכלות ישראל keywords
-- [ ] Update `/app/[locale]/layout.tsx`
-  - [ ] Add metadataBase
-  - [ ] Add canonical URLs
-  - [ ] Add hreflang tags
-  - [ ] Inject Organization schema
+- [x] Create `/lib/config.ts` - Site configuration
+  - [x] SITE_CONFIG with url, name
+  - [x] SOCIAL_LINKS with Instagram, Facebook, Behance
+- [x] Create `/lib/schema.ts` - Schema.org generators
+  - [x] `generateOrganizationSchema()`
+  - [x] `generateLocalBusinessSchema()`
+  - [x] `generatePersonSchema()`
+  - [x] `generateImageObjectSchema()`
+  - [x] `generateBreadcrumbSchema()`
+  - [x] `generateImageGallerySchema()`
+  - [x] `generateProfessionalServiceSchema()`
+- [x] Update `/lib/translations.ts` with SEO keywords
+  - [x] English: architectural photographer Israel keywords
+  - [x] Hebrew: צלם אדריכלות ישראל keywords
+- [x] Update `/app/[locale]/layout.tsx`
+  - [x] Add metadataBase
+  - [x] Add canonical URLs
+  - [x] Add hreflang tags
+  - [x] Inject Organization schema
 
 ## PHASE 4: Navigation & Footer 🧭
 

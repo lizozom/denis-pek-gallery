@@ -2,10 +2,10 @@ import { Locale } from './i18n';
 
 export const translations = {
   en: {
-    siteTitle: 'Denis Pek Gallery',
-    siteDescription: 'Exploring the world through the lens',
-    metaDescription: 'Professional photography gallery showcasing the work of Denis Pek. Explore stunning photographs across various categories.',
-    metaKeywords: 'photography, gallery, Denis Pek, photos, art, portfolio',
+    siteTitle: 'Denis Pekerman - Architectural Photographer Israel',
+    siteDescription: 'Professional Architectural Photography in Israel',
+    metaDescription: 'Professional architectural photographer in Israel specializing in stunning architectural designs, interior spaces, and real estate photography. Serving Tel Aviv and across Israel.',
+    metaKeywords: 'architectural photographer Israel, architectural photography Tel Aviv, interior photography, real estate photography Israel, commercial photography, building photography, architecture photographer, professional architectural photos, Denis Pekerman photographer',
     nav: {
       all: 'All',
       landscape: 'Landscape',
@@ -33,10 +33,10 @@ export const translations = {
     },
   },
   he: {
-    siteTitle: 'גלריית דניס פק',
-    siteDescription: 'חוקרים את העולם דרך העדשה',
-    metaDescription: 'גלריית צילום מקצועית המציגה את עבודתו של דניס פק. גלו תצלומים מדהימים בקטגוריות שונות.',
-    metaKeywords: 'צילום, גלריה, דניס פק, תמונות, אמנות, תיק עבודות',
+    siteTitle: 'דניס פקרמן - צלם אדריכלות בישראל',
+    siteDescription: 'צילום אדריכלות מקצועי בישראל',
+    metaDescription: 'צלם אדריכלות מקצועי בישראל המתמחה בצילום עיצובים אדריכליים מרהיבים, צילום פנים וצילום נדלן. משרת את תל אביב וכל רחבי ישראל.',
+    metaKeywords: 'צלם אדריכלות ישראל, צילום אדריכלות תל אביב, צילום פנים, צילום נדלן ישראל, צילום מסחרי, צילום בניינים, צלם אדריכלות מקצועי, דניס פקרמן צלם, צילום אדריכלי מקצועי',
     nav: {
       all: 'הכל',
       landscape: 'נוף',
