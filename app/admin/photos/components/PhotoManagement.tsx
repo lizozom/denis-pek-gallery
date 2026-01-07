@@ -14,6 +14,7 @@ import {
   updatePhotoAction,
   deletePhotoAction,
   reorderPhotosAction,
+  bulkDeletePhotosAction,
 } from '../actions';
 
 interface PhotoManagementProps {
@@ -32,6 +33,9 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
   const [isLoading, setIsLoading] = useState(false);
   const [draggedId, setDraggedId] = useState<number | null>(null);
   const [hasReordered, setHasReordered] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -173,6 +177,61 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
     setPhotos(initialPhotos);
   };
 
+  const handleToggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === photos.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(photos.map((p) => p.id)));
+    }
+  };
+
+  const handleCancelSelection = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async (permanentDelete: boolean) => {
+    if (selectedIds.size === 0) return;
+
+    setIsLoading(true);
+    try {
+      const result = await bulkDeletePhotosAction(Array.from(selectedIds), permanentDelete);
+      if (result.success && result.data) {
+        // Optimistic update: Remove deleted photos from state
+        setPhotos(photos.filter((photo) => !selectedIds.has(photo.id)));
+        const action = permanentDelete ? 'deleted' : 'hidden';
+        showToast(
+          `${result.data.deleted} photo${result.data.deleted !== 1 ? 's' : ''} ${action} successfully${
+            result.data.failed > 0 ? ` (${result.data.failed} failed)` : ''
+          }`,
+          'success'
+        );
+        setSelectedIds(new Set());
+        setIsSelectionMode(false);
+        setShowBulkDeleteConfirm(false);
+        router.refresh();
+      } else {
+        showToast(result.error || 'Failed to delete photos', 'error');
+      }
+    } catch (error) {
+      showToast('An error occurred', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <header className="bg-white shadow-sm border-b border-gray-200">
@@ -203,8 +262,8 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
 
         {/* Action buttons */}
         <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex gap-3">
-            {!isReordering && (
+          <div className="flex flex-wrap gap-3">
+            {!isReordering && !isSelectionMode && (
               <button
                 onClick={() => setIsAdding(true)}
                 disabled={isAdding || editingPhoto !== null}
@@ -216,7 +275,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
                 Add New Photo
               </button>
             )}
-            {!isAdding && editingPhoto === null && (
+            {!isAdding && editingPhoto === null && !isSelectionMode && (
               <button
                 onClick={() => setIsReordering(!isReordering)}
                 className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all"
@@ -227,20 +286,64 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
                 {isReordering ? 'Cancel Reordering' : 'Reorder Photos'}
               </button>
             )}
+            {!isAdding && editingPhoto === null && !isReordering && photos.length > 0 && (
+              <button
+                onClick={() => {
+                  if (isSelectionMode) {
+                    handleCancelSelection();
+                  } else {
+                    setIsSelectionMode(true);
+                  }
+                }}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all ${
+                  isSelectionMode
+                    ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                    : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 focus:ring-gray-500'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+                {isSelectionMode ? 'Cancel Selection' : 'Bulk Select'}
+              </button>
+            )}
           </div>
 
-          {isReordering && hasReordered && (
-            <button
-              onClick={handleSaveOrder}
-              disabled={isLoading}
-              className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              {isLoading ? 'Saving...' : 'Save Order'}
-            </button>
-          )}
+          <div className="flex gap-3">
+            {isReordering && hasReordered && (
+              <button
+                onClick={handleSaveOrder}
+                disabled={isLoading}
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                {isLoading ? 'Saving...' : 'Save Order'}
+              </button>
+            )}
+
+            {isSelectionMode && (
+              <>
+                <button
+                  onClick={handleSelectAll}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-all"
+                >
+                  {selectedIds.size === photos.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={() => setShowBulkDeleteConfirm(true)}
+                  disabled={selectedIds.size === 0 || isLoading}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-white bg-red-600 rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Selected ({selectedIds.size})
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {isReordering && (
@@ -254,6 +357,26 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
               <div className="ml-3">
                 <p className="text-sm text-blue-800">
                   <strong className="font-semibold">Reorder Mode Active:</strong> Drag and drop photos to rearrange them, then click "Save Order" to save your changes.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isSelectionMode && (
+          <div className="mb-6 bg-blue-50 border-l-4 border-blue-500 rounded-r-md p-4 shadow-sm">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-blue-800">
+                  <strong className="font-semibold">Selection Mode:</strong> Click on photos to select them, then use "Delete Selected" to remove multiple photos at once.
+                  {selectedIds.size > 0 && (
+                    <span className="ml-2 font-medium">({selectedIds.size} selected)</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -288,6 +411,9 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
               onDrop={handleDrop}
               isDragging={draggedId === photo.id}
               isLoading={false}
+              isSelectionMode={isSelectionMode}
+              isSelected={selectedIds.has(photo.id)}
+              onToggleSelect={handleToggleSelect}
             />
           ))}
         </div>
@@ -340,6 +466,59 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
           onCancel={() => setDeleteConfirm(null)}
           isLoading={isLoading}
         />
+      )}
+
+      {showBulkDeleteConfirm && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowBulkDeleteConfirm(false)}
+        >
+          <div
+            className="bg-white rounded-lg shadow-xl max-w-md w-full p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Delete {selectedIds.size} Photos</h3>
+                <p className="text-sm text-gray-500">This action cannot be undone</p>
+              </div>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              Are you sure you want to delete {selectedIds.size} selected photo{selectedIds.size !== 1 ? 's' : ''}?
+              You can choose to hide them from the gallery or permanently delete them.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleBulkDelete(false)}
+                disabled={isLoading}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? 'Processing...' : 'Hide from Gallery'}
+              </button>
+              <button
+                onClick={() => handleBulkDelete(true)}
+                disabled={isLoading}
+                className="w-full px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isLoading ? 'Processing...' : 'Delete Permanently'}
+              </button>
+              <button
+                onClick={() => setShowBulkDeleteConfirm(false)}
+                disabled={isLoading}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

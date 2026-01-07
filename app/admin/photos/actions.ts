@@ -150,3 +150,38 @@ export async function reorderPhotosAction(newOrder: number[]): Promise<ServerAct
 
   return { success: true };
 }
+
+export async function bulkDeletePhotosAction(
+  ids: number[],
+  permanentDelete = false
+): Promise<ServerActionResponse<{ deleted: number; failed: number }>> {
+  await requireAuth();
+
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return { success: false, error: 'No photos selected' };
+  }
+
+  let deleted = 0;
+  let failed = 0;
+
+  for (const id of ids) {
+    const success = permanentDelete
+      ? await deleteGalleryPhoto(id)
+      : await hideGalleryPhoto(id);
+
+    if (success) {
+      deleted++;
+    } else {
+      failed++;
+    }
+  }
+
+  revalidatePath('/admin/photos');
+  revalidatePath('/[locale]', 'page');
+
+  if (failed === ids.length) {
+    return { success: false, error: 'Failed to delete any photos' };
+  }
+
+  return { success: true, data: { deleted, failed } };
+}
