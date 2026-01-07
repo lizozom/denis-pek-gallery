@@ -21,7 +21,9 @@ export default auth((request) => {
         return NextResponse.redirect(loginUrl);
       }
     }
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', pathname);
+    return response;
   }
 
   // Check if pathname already has a locale

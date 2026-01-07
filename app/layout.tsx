@@ -24,10 +24,13 @@ export default async function RootLayout({
   const headersList = await headers();
   const pathname = headersList.get("x-pathname") || headersList.get("x-invoke-path") || "";
 
+  // Admin routes are always LTR
+  const isAdmin = pathname.startsWith("/admin");
+
   // Extract locale from pathname (e.g., /he/... or /en/...)
   const localeMatch = pathname.match(/^\/?(he|en)/);
-  const locale = localeMatch ? localeMatch[1] : "he";
-  const dir = locale === "he" ? "rtl" : "ltr";
+  const locale = isAdmin ? "en" : (localeMatch ? localeMatch[1] : "he");
+  const dir = isAdmin ? "ltr" : (locale === "he" ? "rtl" : "ltr");
 
   return (
     <html lang={locale} dir={dir}>
