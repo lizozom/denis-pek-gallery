@@ -141,6 +141,11 @@
 - [x] Create `/app/[locale]/contact/actions.ts` - Form submission
 - [x] Create `/lib/email.ts` - Email utilities
 
+## ADMIN ENHANCEMENTS
+- [ ] Add a new column to the database for hero_eligible.
+- [ ] By default it should be false.
+- [ ] The hero image should be the latest hero_eligible image.
+
 ## PHASE 6: Advanced Features 🚀 (FUTURE)
 
 - [ ] Testimonials section

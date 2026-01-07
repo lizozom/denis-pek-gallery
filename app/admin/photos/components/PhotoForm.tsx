@@ -24,6 +24,7 @@ export default function PhotoForm({
   const [alt, setAlt] = useState(initialData?.alt || '');
   const [category, setCategory] = useState(initialData?.category || CATEGORIES[0]);
   const [src, setSrc] = useState(initialData?.src || '');
+  const [heroEligible, setHeroEligible] = useState(initialData?.hero_eligible || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = (): boolean => {
@@ -66,6 +67,7 @@ export default function PhotoForm({
     formData.append('alt', alt);
     formData.append('category', category);
     formData.append('src', src);
+    formData.append('hero_eligible', heroEligible.toString());
 
     await onSubmit(formData);
   };
@@ -138,6 +140,24 @@ export default function PhotoForm({
             placeholder="https://example.com/image.jpg"
           />
           {errors.src && <p className="mt-1 text-sm text-red-600">{errors.src}</p>}
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-3 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={heroEligible}
+              onChange={(e) => setHeroEligible(e.target.checked)}
+              disabled={isLoading}
+              className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Hero Eligible
+            </span>
+            <span className="text-sm text-gray-500">
+              (Use this image as the homepage hero background)
+            </span>
+          </label>
         </div>
       </div>
 

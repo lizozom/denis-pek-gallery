@@ -23,6 +23,7 @@ export default function EditPhotoModal({
   const [alt, setAlt] = useState(photo.alt);
   const [category, setCategory] = useState(photo.category);
   const [src, setSrc] = useState(photo.src);
+  const [heroEligible, setHeroEligible] = useState(photo.hero_eligible || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const validateForm = (): boolean => {
@@ -65,6 +66,7 @@ export default function EditPhotoModal({
     formData.append('alt', alt);
     formData.append('category', category);
     formData.append('src', src);
+    formData.append('hero_eligible', heroEligible.toString());
 
     await onSave(formData);
   };
@@ -179,6 +181,24 @@ export default function EditPhotoModal({
                   placeholder="https://example.com/image.jpg"
                 />
                 {errors.src && <p className="mt-1 text-sm text-red-600">{errors.src}</p>}
+              </div>
+
+              <div>
+                <label className="flex items-center gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={heroEligible}
+                    onChange={(e) => setHeroEligible(e.target.checked)}
+                    disabled={isLoading}
+                    className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500 disabled:opacity-50"
+                  />
+                  <span className="text-sm font-medium text-gray-700">
+                    Hero Eligible
+                  </span>
+                  <span className="text-sm text-gray-500">
+                    (Use as homepage hero)
+                  </span>
+                </label>
               </div>
             </form>
           </div>

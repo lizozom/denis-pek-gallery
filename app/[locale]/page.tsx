@@ -1,5 +1,6 @@
 import { Locale } from "@/lib/i18n";
 import { getGalleryImages } from "@/lib/gallery";
+import { getHeroPhoto } from "@/lib/db";
 import Navigation from "@/app/components/Navigation";
 import HeroSection from "@/app/components/HeroSection";
 import GallerySection from "@/app/components/GallerySection";
@@ -16,11 +17,11 @@ interface HomeProps {
 export default async function Home({ params }: HomeProps) {
   const { locale } = await params as { locale: Locale };
 
-  // Fetch images from database
-  const images = await getGalleryImages();
-
-  // Use the first image as hero background, or fallback
-  const heroImage = images.length > 0 ? images[0] : null;
+  // Fetch images and hero photo from database
+  const [images, heroImage] = await Promise.all([
+    getGalleryImages(),
+    getHeroPhoto(),
+  ]);
 
   return (
     <div className="min-h-screen">

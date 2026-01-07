@@ -45,6 +45,7 @@ export async function addPhotoAction(formData: FormData): Promise<ServerActionRe
   const alt = sanitizeInput(formData.get('alt') as string || '');
   const category = sanitizeInput(formData.get('category') as string || '');
   const src = sanitizeInput(formData.get('src') as string || '');
+  const hero_eligible = formData.get('hero_eligible') === 'true';
 
   if (!title || !alt || !category || !src) {
     return { success: false, error: 'All fields are required' };
@@ -54,7 +55,7 @@ export async function addPhotoAction(formData: FormData): Promise<ServerActionRe
     return { success: false, error: 'Invalid image URL' };
   }
 
-  const newImage = await addGalleryPhoto({ title, alt, category, src });
+  const newImage = await addGalleryPhoto({ title, alt, category, src, hero_eligible });
 
   if (!newImage) {
     return { success: false, error: 'Failed to add photo' };
@@ -76,6 +77,7 @@ export async function updatePhotoAction(
   const alt = sanitizeInput(formData.get('alt') as string || '');
   const category = sanitizeInput(formData.get('category') as string || '');
   const src = sanitizeInput(formData.get('src') as string || '');
+  const hero_eligible = formData.get('hero_eligible') === 'true';
 
   if (!title || !alt || !category || !src) {
     return { success: false, error: 'All fields are required' };
@@ -85,7 +87,7 @@ export async function updatePhotoAction(
     return { success: false, error: 'Invalid image URL' };
   }
 
-  const updates = { title, alt, category, src };
+  const updates = { title, alt, category, src, hero_eligible };
   const success = await updateGalleryPhoto(id, updates);
 
   if (!success) {

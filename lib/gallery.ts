@@ -6,6 +6,7 @@ export interface GalleryImage {
   alt: string;
   title: string;
   category: string;
+  hero_eligible?: boolean;
 }
 
 export function titleToSlug(title: string): string {

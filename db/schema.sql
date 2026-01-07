@@ -6,9 +6,22 @@ CREATE TABLE IF NOT EXISTS gallery_photos (
   category TEXT NOT NULL,
   src TEXT NOT NULL,
   position INTEGER NOT NULL DEFAULT 0,
+  hidden BOOLEAN NOT NULL DEFAULT false,
+  hero_eligible BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add columns if they don't exist (for existing databases)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'hidden') THEN
+    ALTER TABLE gallery_photos ADD COLUMN hidden BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'hero_eligible') THEN
+    ALTER TABLE gallery_photos ADD COLUMN hero_eligible BOOLEAN NOT NULL DEFAULT false;
+  END IF;
+END $$;
 
 -- Index for ordering by position
 CREATE INDEX IF NOT EXISTS idx_gallery_photos_position ON gallery_photos(position);

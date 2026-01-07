@@ -11,14 +11,14 @@ export async function getGalleryPhotos(includeHidden = false): Promise<GalleryIm
     let rows;
     if (includeHidden) {
       const result = await sql<GalleryImage>`
-        SELECT id, title, alt, category, src
+        SELECT id, title, alt, category, src, hero_eligible
         FROM gallery_photos
         ORDER BY position DESC, id DESC
       `;
       rows = result.rows;
     } else {
       const result = await sql<GalleryImage>`
-        SELECT id, title, alt, category, src
+        SELECT id, title, alt, category, src, hero_eligible
         FROM gallery_photos
         WHERE hidden = false
         ORDER BY position DESC, id DESC
@@ -33,12 +33,32 @@ export async function getGalleryPhotos(includeHidden = false): Promise<GalleryIm
 }
 
 /**
+ * Fetches the latest hero-eligible photo for the hero section
+ * Returns the most recently added photo with hero_eligible = true
+ */
+export async function getHeroPhoto(): Promise<GalleryImage | null> {
+  try {
+    const { rows } = await sql<GalleryImage>`
+      SELECT id, title, alt, category, src, hero_eligible
+      FROM gallery_photos
+      WHERE hero_eligible = true AND hidden = false
+      ORDER BY position DESC, id DESC
+      LIMIT 1
+    `;
+    return rows[0] || null;
+  } catch (error) {
+    console.error('Error fetching hero photo:', error);
+    return null;
+  }
+}
+
+/**
  * Fetches a single photo by ID
  */
 export async function getPhotoById(id: number): Promise<GalleryImage | null> {
   try {
     const { rows } = await sql<GalleryImage>`
-      SELECT id, title, alt, category, src
+      SELECT id, title, alt, category, src, hero_eligible
       FROM gallery_photos
       WHERE id = ${id}
       LIMIT 1
@@ -63,11 +83,12 @@ export async function addGalleryPhoto(
       FROM gallery_photos
     `;
     const newPosition = (maxRows[0]?.max_position ?? -1) + 1;
+    const heroEligible = photo.hero_eligible ?? false;
 
     const { rows } = await sql<GalleryImage>`
-      INSERT INTO gallery_photos (title, alt, category, src, position)
-      VALUES (${photo.title}, ${photo.alt}, ${photo.category}, ${photo.src}, ${newPosition})
-      RETURNING id, title, alt, category, src
+      INSERT INTO gallery_photos (title, alt, category, src, position, hero_eligible)
+      VALUES (${photo.title}, ${photo.alt}, ${photo.category}, ${photo.src}, ${newPosition}, ${heroEligible})
+      RETURNING id, title, alt, category, src, hero_eligible
     `;
 
     return rows[0] || null;
@@ -85,7 +106,7 @@ export async function updateGalleryPhoto(
   updates: Partial<Omit<GalleryImage, 'id'>>
 ): Promise<boolean> {
   try {
-    const { title, alt, category, src } = updates;
+    const { title, alt, category, src, hero_eligible } = updates;
 
     await sql`
       UPDATE gallery_photos
@@ -93,7 +114,8 @@ export async function updateGalleryPhoto(
         title = COALESCE(${title}, title),
         alt = COALESCE(${alt}, alt),
         category = COALESCE(${category}, category),
-        src = COALESCE(${src}, src)
+        src = COALESCE(${src}, src),
+        hero_eligible = COALESCE(${hero_eligible}, hero_eligible)
       WHERE id = ${id}
     `;
 
