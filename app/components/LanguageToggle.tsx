@@ -11,6 +11,12 @@ export default function LanguageToggle({ currentLocale }: { currentLocale: Local
     const newLocale: Locale = currentLocale === 'en' ? 'he' : 'en';
     // Remove the current locale from the pathname and add the new one
     const pathWithoutLocale = pathname.replace(/^\/(en|he)/, '');
+
+    // Update dir attribute immediately for smooth transition
+    const newDir = newLocale === 'he' ? 'rtl' : 'ltr';
+    document.documentElement.dir = newDir;
+    document.documentElement.lang = newLocale;
+
     router.push(`/${newLocale}${pathWithoutLocale}`);
   };
 

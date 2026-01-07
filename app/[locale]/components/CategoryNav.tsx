@@ -59,7 +59,7 @@ export default function CategoryNav({
                 >
                   {getCategoryLabel(category)}
                   {count > 0 && (
-                    <span className={`ml-2 text-xs ${
+                    <span className={`mx-1 text-xs ${
                       isActive ? 'text-gray-600' : 'text-gray-400'
                     }`}>
                       ({count})

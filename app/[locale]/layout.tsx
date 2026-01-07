@@ -1,19 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import { Locale, locales } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
 import { SITE_CONFIG } from "@/lib/config";
 import { generateOrganizationSchema } from "@/lib/schema";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export async function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -76,26 +65,19 @@ export async function generateMetadata({
 
 export default async function LocaleLayout({
   children,
-  params,
 }: Readonly<{
   children: React.ReactNode;
   params: Promise<{ locale: string }>;
 }>) {
-  const { locale } = await params as { locale: Locale };
-  const dir = locale === 'he' ? 'rtl' : 'ltr';
   const organizationSchema = generateOrganizationSchema();
 
   return (
-    <html lang={locale} dir={dir}>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-        {children}
-      </body>
-    </html>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      {children}
+    </>
   );
 }

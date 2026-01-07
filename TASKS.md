@@ -113,20 +113,33 @@
 - [x] The h1 \ p main texts should live in the header
 - [x] The menu should be beautifully designed and match the website design
 
-## PHASE 5: Contact & About Pages 📞 (LATER)
+## Improve design ✅ COMPLETED
+- [x] Layout: Convert the site to a Single Page Application (SPA). All nav links should smooth-scroll to sections rather than load new pages.
+- [x] Component order is Hero > Gallery > About > Contact > Footer
+- [x] Hero Section: Build a 100vh hero section with the abstract architectural image as a background. Center the Title (Serif font) and Subtitle (Sans-serif, wide tracking) in the middle.
+- [x] Sticky Nav: Create a fixed header. Initially, it must be transparent with 50% opacity text. On scroll, transition the header background to solid dark grey/black with a blur effect.
+- [x] Language Toggle: Add a simple 'EN / HE' text switch in the navbar
+- [x] Interaction: Add a 'View Gallery' button under the hero text that smooth-scrolls to the grid section below.
+- [x] When showing the hero section, the text "Denis Pekerman" in the menu should be transparent. It should be become visible when the menu background appears.
+- [x] When the menu background appears - it should be white. Menu item can flip from light to dark.
+- [x] Hide the filters bar for now.
+- [x] Switch the gallery to a 3 column layout
+- [x] In hebrew, I don't want title text to use italics
+- [x] In the menu, use the font-serif for the website name
 
-- [ ] Create `/app/[locale]/about/page.tsx`
-  - [ ] Professional bio
-  - [ ] Photo of Denis
-  - [ ] Expertise areas
-  - [ ] Client types served
-- [ ] Create `/app/[locale]/contact/page.tsx`
-  - [ ] Contact form (Name, Email, Phone, Project Type, Message)
-  - [ ] Form validation
-  - [ ] Success/error states
-- [ ] Create `/app/[locale]/contact/actions.ts` - Form submission
-- [ ] Create `/lib/email.ts` - Email utilities
-- [ ] Set up Resend for email delivery
+## PHASE 5: Contact & About Sections ✅ COMPLETED (now integrated into SPA)
+
+- [x] About section on home page
+  - [x] Professional bio
+  - [x] Expertise areas
+  - [x] Client types served
+  - [ ] Photo of Denis (optional)
+- [x] Contact section on home page
+  - [x] Contact form (Name, Email, Phone, Project Type, Message)
+  - [x] Form validation
+  - [x] Success/error states
+- [x] Create `/app/[locale]/contact/actions.ts` - Form submission
+- [x] Create `/lib/email.ts` - Email utilities
 
 ## PHASE 6: Advanced Features 🚀 (FUTURE)
 
@@ -176,5 +189,5 @@ export async function getCategoryCounts(): Promise<Record<string, number>>
 
 ---
 
-## Current Status: Phase 0 - Database Setup
-**Next Action:** Run `npm run db:init` to initialize the database
+## Current Status: Design Improvements Complete
+**Next Action:** Test the SPA design, then work on remaining tasks like 2-column gallery layout

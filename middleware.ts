@@ -30,7 +30,10 @@ export default auth((request) => {
   );
 
   if (pathnameHasLocale) {
-    return NextResponse.next();
+    // Set the pathname header for the root layout to read
+    const response = NextResponse.next();
+    response.headers.set('x-pathname', pathname);
+    return response;
   }
 
   // Redirect root to default locale

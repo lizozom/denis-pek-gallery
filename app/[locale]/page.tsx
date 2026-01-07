@@ -1,9 +1,11 @@
 import { Locale } from "@/lib/i18n";
-import { getTranslations } from "@/lib/translations";
-import Navigation from "@/app/components/Navigation";
-import Footer from "@/app/components/Footer";
-import GalleryClient from "./components/GalleryClient";
 import { getGalleryImages } from "@/lib/gallery";
+import Navigation from "@/app/components/Navigation";
+import HeroSection from "@/app/components/HeroSection";
+import GallerySection from "@/app/components/GallerySection";
+import AboutSection from "@/app/components/AboutSection";
+import ContactSection from "@/app/components/ContactSection";
+import Footer from "@/app/components/Footer";
 
 interface HomeProps {
   params: Promise<{
@@ -13,19 +15,29 @@ interface HomeProps {
 
 export default async function Home({ params }: HomeProps) {
   const { locale } = await params as { locale: Locale };
-  const t = getTranslations(locale);
 
   // Fetch images from database
   const images = await getGalleryImages();
 
-  return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <Navigation locale={locale} showHeader={true} />
+  // Use the first image as hero background, or fallback
+  const heroImage = images.length > 0 ? images[0] : null;
 
-      <main className="flex-grow">
-        <div className="max-w-full px-4 sm:px-6 lg:px-8 py-8">
-          <GalleryClient images={images} locale={locale} />
-        </div>
+  return (
+    <div className="min-h-screen">
+      <Navigation locale={locale} />
+
+      <main>
+        {/* Hero Section */}
+        <HeroSection locale={locale} heroImageUrl={heroImage?.src} />
+
+        {/* Gallery Section */}
+        <GallerySection images={images} locale={locale} />
+
+        {/* About Section */}
+        <AboutSection locale={locale} />
+
+        {/* Contact Section */}
+        <ContactSection locale={locale} />
       </main>
 
       <Footer locale={locale} />

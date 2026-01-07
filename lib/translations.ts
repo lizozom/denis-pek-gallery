@@ -3,7 +3,13 @@ import { Locale } from './i18n';
 export const translations = {
   en: {
     siteTitle: 'Denis Pekerman',
-    siteDescription: 'Professional Architectural Photography in Israel',
+    siteDescription: 'ART & ABSTRACT PHOTOGRAPHY',
+    hero: {
+      viewGallery: 'VIEW GALLERY',
+    },
+    gallery: {
+      title: 'Selected Works',
+    },
     metaDescription: 'Professional architectural photographer in Israel specializing in stunning architectural designs, interior spaces, and real estate photography. Serving Tel Aviv and across Israel.',
     metaKeywords: 'architectural photographer Israel, architectural photography Tel Aviv, interior photography, real estate photography Israel, commercial photography, building photography, architecture photographer, professional architectural photos, Denis Pekerman photographer',
     nav: {
@@ -12,9 +18,10 @@ export const translations = {
       portrait: 'Portrait',
       urban: 'Urban',
       nature: 'Nature',
+      home: 'HOME',
       gallery: 'Gallery',
-      about: 'About',
-      contact: 'Contact',
+      about: 'ABOUT',
+      contact: 'CONTACT',
     },
     footer: {
       copyright: 'All rights reserved.',
@@ -35,9 +42,9 @@ export const translations = {
       notFoundDescription: "Sorry, we couldn't find the photo you're looking for.",
     },
     about: {
-      title: 'About Denis Pekerman',
+      title: 'About',
       subtitle: 'Professional Architectural Photographer',
-      bio: 'With years of experience in architectural photography, I specialize in capturing the beauty and essence of architectural designs, interior spaces, and real estate across Israel. My work combines technical precision with artistic vision to showcase spaces in their best light.',
+      bio: "I don’t look at buildings as architecture; I look at them as shapes and patterns. Since I was a child, I’ve been fascinated by the moment reality breaks down after staring at an occasional pattern on a structure for too long. My work is about capturing that specific optical illusion. By stripping away the context of the street and the sky, I isolate the rhythm of the illusion until it becomes something else entirely. I use tight crops, rotations, and shifts in perspective to create disorientation, yet i never remove the anchor to reality entirely. I want the viewer to lose their balance for a second and let the mind start switching between abstraction and reality. My photos are not architecture photography; they are records of how my mind processes the urban environment.",
       expertise: {
         title: 'Expertise',
         areas: [
@@ -103,7 +110,13 @@ export const translations = {
   },
   he: {
     siteTitle: 'דניס פקרמן',
-    siteDescription: 'צילום אדריכלות מקצועי בישראל',
+    siteDescription: 'צילום אמנות ואבסטרקט',
+    hero: {
+      viewGallery: 'לגלריה',
+    },
+    gallery: {
+      title: 'עבודות נבחרות',
+    },
     metaDescription: 'צלם אדריכלות מקצועי בישראל המתמחה בצילום עיצובים אדריכליים מרהיבים, צילום פנים וצילום נדלן. משרת את תל אביב וכל רחבי ישראל.',
     metaKeywords: 'צלם אדריכלות ישראל, צילום אדריכלות תל אביב, צילום פנים, צילום נדלן ישראל, צילום מסחרי, צילום בניינים, צלם אדריכלות מקצועי, דניס פקרמן צלם, צילום אדריכלי מקצועי',
     nav: {
@@ -112,6 +125,7 @@ export const translations = {
       portrait: 'פורטרט',
       urban: 'עירוני',
       nature: 'טבע',
+      home: 'בית',
       gallery: 'גלריה',
       about: 'אודות',
       contact: 'צור קשר',
@@ -135,7 +149,7 @@ export const translations = {
       notFoundDescription: 'מצטערים, לא הצלחנו למצוא את התמונה שאתה מחפש.',
     },
     about: {
-      title: 'אודות דניס פקרמן',
+      title: 'אודות',
       subtitle: 'צלם אדריכלות מקצועי',
       bio: 'עם שנות ניסיון רבות בצילום אדריכלות, אני מתמחה בצילום יופי ומהות של עיצובים אדריכליים, חללי פנים ונדל״ן ברחבי ישראל. העבודה שלי משלבת דיוק טכני עם חזון אמנותי כדי להציג חללים באור הטוב ביותר.',
       expertise: {
