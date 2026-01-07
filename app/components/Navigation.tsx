@@ -62,8 +62,8 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
   }`;
 
   // Logo styles - hidden on hero (transparent), visible when scrolled (dark text)
-  // Use font-serif with italic, always in English
-  const logoClass = `text-2xl font-light tracking-wide transition-all duration-300 font-serif ${
+  // Use font-display with italic, always in English
+  const logoClass = `text-2xl font-light tracking-wide transition-all duration-300 font-display ${
     isSolid
       ? 'opacity-100 text-gray-900'
       : 'opacity-0 pointer-events-none'

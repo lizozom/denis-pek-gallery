@@ -117,7 +117,7 @@ export default function ContactSection({ locale }: ContactSectionProps) {
       <div className="max-w-2xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
-          <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight font-serif ${isEnglish ? 'italic' : ''} mb-4`}>
+          <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
             {t.contact.title}
           </h2>
           <div className="w-16 h-px bg-gray-300 mx-auto mb-6" />

@@ -16,7 +16,7 @@ export default function AboutSection({ locale }: AboutSectionProps) {
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">
-          <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight font-serif ${isEnglish ? 'italic' : ''} mb-4`}>
+          <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
             {t.about.title}
           </h2>
           <div className="w-16 h-px bg-gray-300 mx-auto" />

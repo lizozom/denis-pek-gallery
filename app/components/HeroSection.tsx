@@ -39,12 +39,12 @@ export default function HeroSection({ locale, heroImageUrl }: HeroSectionProps) 
       {/* Content */}
       <div className="relative z-10 text-center px-6">
         {/* Title - Serif font, always in English */}
-        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-white mb-6 tracking-tight font-serif font-weight-normal">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-light text-white mb-6 tracking-tight font-weight-normal">
           Denis Pekerman
         </h1>
 
         {/* Subtitle - Sans-serif, wide tracking */}
-        <p className="text-sm sm:text-base md:text-lg text-white/80 tracking-[0.3em]  uppercase mb-12">
+        <p className="text-sm sm:text-base md:text-lg text-white/80 tracking-[0.3em] uppercase mb-12">
           {t.siteDescription}
         </p>
 
