@@ -39,7 +39,6 @@ export default function PhotoCard({
   isSelected = false,
   onToggleSelect,
 }: PhotoCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   if (isEditing) {
@@ -115,11 +114,6 @@ export default function PhotoCard({
 
       {/* Image container */}
       <div className="aspect-square bg-gray-100 relative overflow-hidden">
-        {/* Loading placeholder */}
-        {!imageLoaded && !imageError && (
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 via-gray-100 to-gray-200 animate-pulse" />
-        )}
-
         {/* Error state */}
         {imageError && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -146,10 +140,7 @@ export default function PhotoCard({
         <img
           src={photo.src}
           alt={photo.alt}
-          className={`w-full h-full object-cover transition-opacity duration-300 ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setImageLoaded(true)}
+          className="w-full h-full object-cover"
           onError={() => setImageError(true)}
         />
       </div>

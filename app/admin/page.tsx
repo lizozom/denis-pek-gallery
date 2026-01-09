@@ -1,6 +1,6 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
-import { galleryImages } from "@/lib/gallery";
+import { getGalleryImages } from "@/lib/gallery";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -8,6 +8,8 @@ export default async function AdminPage() {
   if (!session) {
     redirect("/admin/login");
   }
+
+  const galleryImages = await getGalleryImages();
 
   return (
     <div className="min-h-screen bg-gray-50">
