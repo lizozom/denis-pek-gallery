@@ -22,9 +22,11 @@ export default function EditPhotoModal({
   const [title, setTitle] = useState(photo.title);
   const [alt, setAlt] = useState(photo.alt);
   const [category, setCategory] = useState(photo.category);
-  const [src, setSrc] = useState(photo.src);
   const [heroEligible, setHeroEligible] = useState(photo.hero_eligible || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -37,21 +39,26 @@ export default function EditPhotoModal({
       newErrors.alt = 'Alt text is required';
     }
 
-    if (!src.trim()) {
-      newErrors.src = 'Image URL is required';
-    } else {
-      try {
-        const url = new URL(src);
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          newErrors.src = 'URL must start with http:// or https://';
-        }
-      } catch {
-        newErrors.src = 'Please enter a valid URL';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setErrors({ ...errors, file: 'Only JPEG, PNG, WebP, and GIF files are allowed' });
+        return;
+      }
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setErrors({ ...errors, file: 'File size must be less than 10MB' });
+        return;
+      }
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+      setErrors({ ...errors, file: '' });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -61,14 +68,45 @@ export default function EditPhotoModal({
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('alt', alt);
-    formData.append('category', category);
-    formData.append('src', src);
-    formData.append('hero_eligible', heroEligible.toString());
+    setIsUploading(true);
 
-    await onSave(formData);
+    try {
+      let imageUrl = photo.src;
+
+      // Upload new file if selected
+      if (file) {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+
+        const uploadResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        if (!uploadResponse.ok) {
+          const error = await uploadResponse.json();
+          setErrors({ ...errors, file: error.error || 'Failed to upload image' });
+          setIsUploading(false);
+          return;
+        }
+
+        const { url } = await uploadResponse.json();
+        imageUrl = url;
+      }
+
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('alt', alt);
+      formData.append('category', category);
+      formData.append('src', imageUrl);
+      formData.append('hero_eligible', heroEligible.toString());
+
+      await onSave(formData);
+    } catch {
+      setErrors({ ...errors, file: 'Failed to upload image' });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -97,11 +135,11 @@ export default function EditPhotoModal({
             {/* Image Preview */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Current Image
+                {previewUrl ? 'New Image' : 'Current Image'}
               </label>
               <div className="aspect-square w-full rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <Image
-                  src={photo.src}
+                  src={previewUrl || photo.src}
                   alt={photo.alt}
                   width={400}
                   height={400}
@@ -168,19 +206,19 @@ export default function EditPhotoModal({
               </div>
 
               <div>
-                <label htmlFor="src" className="block text-sm font-medium text-gray-700 mb-1">
-                  Image URL *
+                <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+                  Replace Image
                 </label>
                 <input
-                  id="src"
-                  type="url"
-                  value={src}
-                  onChange={(e) => setSrc(e.target.value)}
-                  disabled={isLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50"
-                  placeholder="https://example.com/image.jpg"
+                  id="file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={handleFileChange}
+                  disabled={isLoading || isUploading}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                 />
-                {errors.src && <p className="mt-1 text-sm text-red-600">{errors.src}</p>}
+                <p className="mt-1 text-xs text-gray-500">Leave empty to keep current image</p>
+                {errors.file && <p className="mt-1 text-sm text-red-600">{errors.file}</p>}
               </div>
 
               <div>
@@ -208,7 +246,7 @@ export default function EditPhotoModal({
             <button
               type="button"
               onClick={onCancel}
-              disabled={isLoading}
+              disabled={isLoading || isUploading}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
             >
               Cancel
@@ -216,10 +254,10 @@ export default function EditPhotoModal({
             <button
               type="submit"
               form="edit-photo-form"
-              disabled={isLoading}
+              disabled={isLoading || isUploading}
               className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
             >
-              {isLoading ? 'Saving...' : 'Save Changes'}
+              {isUploading ? 'Uploading...' : isLoading ? 'Saving...' : 'Save Changes'}
             </button>
           </div>
         </div>

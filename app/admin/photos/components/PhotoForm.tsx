@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import type { GalleryImage } from '@/lib/gallery';
 
 interface PhotoFormProps {
@@ -23,9 +24,11 @@ export default function PhotoForm({
   const [title, setTitle] = useState(initialData?.title || '');
   const [alt, setAlt] = useState(initialData?.alt || '');
   const [category, setCategory] = useState(initialData?.category || CATEGORIES[0]);
-  const [src, setSrc] = useState(initialData?.src || '');
   const [heroEligible, setHeroEligible] = useState(initialData?.hero_eligible || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [file, setFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -38,38 +41,74 @@ export default function PhotoForm({
       newErrors.alt = 'Alt text is required';
     }
 
-    if (!src.trim()) {
-      newErrors.src = 'Image URL is required';
-    } else {
-      try {
-        const url = new URL(src);
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          newErrors.src = 'URL must start with http:// or https://';
-        }
-      } catch {
-        newErrors.src = 'Please enter a valid URL';
-      }
+    if (!file) {
+      newErrors.file = 'Please select an image file';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(selectedFile.type)) {
+        setErrors({ ...errors, file: 'Only JPEG, PNG, WebP, and GIF files are allowed' });
+        return;
+      }
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        setErrors({ ...errors, file: 'File size must be less than 10MB' });
+        return;
+      }
+      setFile(selectedFile);
+      setPreviewUrl(URL.createObjectURL(selectedFile));
+      setErrors({ ...errors, file: '' });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
+    if (!validateForm() || !file) {
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('alt', alt);
-    formData.append('category', category);
-    formData.append('src', src);
-    formData.append('hero_eligible', heroEligible.toString());
+    setIsUploading(true);
 
-    await onSubmit(formData);
+    try {
+      // Upload file first
+      const uploadFormData = new FormData();
+      uploadFormData.append('file', file);
+
+      const uploadResponse = await fetch('/api/upload', {
+        method: 'POST',
+        body: uploadFormData,
+      });
+
+      if (!uploadResponse.ok) {
+        const error = await uploadResponse.json();
+        setErrors({ ...errors, file: error.error || 'Failed to upload image' });
+        setIsUploading(false);
+        return;
+      }
+
+      const { url } = await uploadResponse.json();
+
+      // Now submit the form with the uploaded URL
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('alt', alt);
+      formData.append('category', category);
+      formData.append('src', url);
+      formData.append('hero_eligible', heroEligible.toString());
+
+      await onSubmit(formData);
+    } catch {
+      setErrors({ ...errors, file: 'Failed to upload image' });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -127,19 +166,30 @@ export default function PhotoForm({
         </div>
 
         <div>
-          <label htmlFor="src" className="block text-sm font-medium text-gray-700 mb-1">
-            Image URL *
+          <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
+            Image *
           </label>
           <input
-            id="src"
-            type="url"
-            value={src}
-            onChange={(e) => setSrc(e.target.value)}
-            disabled={isLoading}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            placeholder="https://example.com/image.jpg"
+            id="file"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            onChange={handleFileChange}
+            disabled={isLoading || isUploading}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
           />
-          {errors.src && <p className="mt-1 text-sm text-red-600">{errors.src}</p>}
+          {errors.file && <p className="mt-1 text-sm text-red-600">{errors.file}</p>}
+          {previewUrl && (
+            <div className="mt-3">
+              <Image
+                src={previewUrl}
+                alt="Preview"
+                width={200}
+                height={200}
+                className="rounded-lg object-cover"
+                unoptimized
+              />
+            </div>
+          )}
         </div>
 
         <div className="sm:col-span-2">
@@ -165,17 +215,17 @@ export default function PhotoForm({
         <button
           type="button"
           onClick={onCancel}
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
           className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || isUploading}
           className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Saving...' : submitLabel}
+          {isUploading ? 'Uploading...' : isLoading ? 'Saving...' : submitLabel}
         </button>
       </div>
     </form>
