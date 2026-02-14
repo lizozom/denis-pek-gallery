@@ -55,7 +55,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
       } else {
         showToast(result.error || 'Failed to add photo', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('An error occurred', 'error');
     } finally {
       setIsLoading(false);
@@ -85,7 +85,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
       } else {
         showToast(result.error || 'Failed to update photo', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('An error occurred', 'error');
     } finally {
       setIsLoading(false);
@@ -110,7 +110,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
       } else {
         showToast(result.error || 'Failed to delete photo', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('An error occurred', 'error');
     } finally {
       setIsLoading(false);
@@ -164,17 +164,11 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
       } else {
         showToast(result.error || 'Failed to save order', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('An error occurred', 'error');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleCancelReorder = () => {
-    setIsReordering(false);
-    setHasReordered(false);
-    setPhotos(initialPhotos);
   };
 
   const handleToggleSelect = (id: number) => {
@@ -225,7 +219,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
       } else {
         showToast(result.error || 'Failed to delete photos', 'error');
       }
-    } catch (error) {
+    } catch {
       showToast('An error occurred', 'error');
     } finally {
       setIsLoading(false);
@@ -356,7 +350,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-800">
-                  <strong className="font-semibold">Reorder Mode Active:</strong> Drag and drop photos to rearrange them, then click "Save Order" to save your changes.
+                  <strong className="font-semibold">Reorder Mode Active:</strong> Drag and drop photos to rearrange them, then click &quot;Save Order&quot; to save your changes.
                 </p>
               </div>
             </div>
@@ -373,7 +367,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-800">
-                  <strong className="font-semibold">Selection Mode:</strong> Click on photos to select them, then use "Delete Selected" to remove multiple photos at once.
+                  <strong className="font-semibold">Selection Mode:</strong> Click on photos to select them, then use &quot;Delete Selected&quot; to remove multiple photos at once.
                   {selectedIds.size > 0 && (
                     <span className="ml-2 font-medium">({selectedIds.size} selected)</span>
                   )}

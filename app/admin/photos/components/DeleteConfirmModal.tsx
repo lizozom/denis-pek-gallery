@@ -37,6 +37,7 @@ export default function DeleteConfirmModal({
 
         <div className="mb-4">
           <div className="aspect-square w-full max-w-xs mx-auto mb-4 rounded-lg overflow-hidden bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.src}
               alt={photo.alt}

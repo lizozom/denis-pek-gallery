@@ -155,7 +155,7 @@ export function generateBreadcrumbSchema(items: Array<{ name: string; url: strin
  * Generate ImageGallery schema
  * For the main gallery page
  */
-export function generateImageGallerySchema(photos: GalleryImage[], locale: string = 'en') {
+export function generateImageGallerySchema(photos: GalleryImage[]) {
   return {
     '@context': 'https://schema.org',
     '@type': 'ImageGallery',

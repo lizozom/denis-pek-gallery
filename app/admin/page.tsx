@@ -1,6 +1,8 @@
 import { auth, signOut } from "@/auth";
 import { redirect } from "next/navigation";
 import { getGalleryImages } from "@/lib/gallery";
+import Link from "next/link";
+import Image from "next/image";
 
 export default async function AdminPage() {
   const session = await auth();
@@ -73,7 +75,7 @@ export default async function AdminPage() {
             </svg>
             View Gallery
           </a>
-          <a
+          <Link
             href="/admin/photos"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
           >
@@ -91,7 +93,7 @@ export default async function AdminPage() {
               />
             </svg>
             Manage Photos
-          </a>
+          </Link>
         </div>
 
         {/* Stats */}
@@ -173,10 +175,11 @@ export default async function AdminPage() {
                 key={image.id}
                 className="relative aspect-square rounded-lg overflow-hidden bg-gray-100"
               >
-                <img
+                <Image
                   src={image.src}
                   alt={image.alt}
-                  className="w-full h-full object-cover"
+                  fill
+                  className="object-cover"
                 />
               </div>
             ))}

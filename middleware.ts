@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { defaultLocale, locales } from './lib/i18n';
 import { auth } from './auth';
 

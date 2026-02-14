@@ -32,7 +32,7 @@ function LoginForm() {
         router.push(callbackUrl);
         router.refresh();
       }
-    } catch (error) {
+    } catch {
       setError("An error occurred. Please try again.");
     } finally {
       setIsLoading(false);

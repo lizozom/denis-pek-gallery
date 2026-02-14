@@ -1,6 +1,6 @@
 import "./globals.css";
 import { headers } from "next/headers";
-import {  Cormorant_Garamond, Inter } from "next/font/google";
+import { Cormorant_Garamond } from "next/font/google";
 
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -8,12 +8,6 @@ const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   style: ["normal", "italic"],
-});
-
-const inter = Inter({
-  variable: "--font-body",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
 });
 
 export default async function RootLayout({

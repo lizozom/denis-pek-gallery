@@ -27,9 +27,9 @@ async function initDatabase() {
     try {
       await sql.query(schema);
       console.log(`✅ Schema executed successfully\n`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if it's just "already exists" errors
-      if (error.message && (error.message.includes('already exists') || error.message.includes('duplicate'))) {
+      if (error instanceof Error && (error.message.includes('already exists') || error.message.includes('duplicate'))) {
         console.log(`⚠️  Some objects already exist, continuing...\n`);
       } else {
         throw error;
