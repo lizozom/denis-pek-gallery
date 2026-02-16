@@ -1,6 +1,6 @@
 import "./globals.css";
 import { headers } from "next/headers";
-import { Cormorant_Garamond } from "next/font/google";
+import { Cormorant_Garamond, Space_Grotesk } from "next/font/google";
 
 
 const cormorantGaramond = Cormorant_Garamond({
@@ -8,6 +8,12 @@ const cormorantGaramond = Cormorant_Garamond({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   style: ["normal", "italic"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export default async function RootLayout({
@@ -28,7 +34,7 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} dir={dir}>
-      <body className={`${cormorantGaramond.variable} antialiased`}>
+      <body className={`${cormorantGaramond.variable} ${spaceGrotesk.variable} antialiased`}>
         {children}
       </body>
     </html>

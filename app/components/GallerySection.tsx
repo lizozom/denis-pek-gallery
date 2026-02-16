@@ -12,15 +12,14 @@ interface GallerySectionProps {
 
 export default function GallerySection({ images, locale }: GallerySectionProps) {
   const t = getTranslations(locale);
-  const isEnglish = locale === 'en';
 
   return (
-    <section id="gallery" className="py-20 md:py-32" style={{ background: 'transparent' }}>
-      <div className="max-w-7xl mx-auto px-6 lg:px-8">
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
-            {t.gallery.title}
+    <section id="gallery" style={{ background: 'transparent' }}>
+      {/* Hero-style heading — centered in viewport */}
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-4xl sm:text-5xl font-light text-gray-900 tracking-tight font-heading mb-4">
+            Denis Pekerman
           </h2>
           <div className="w-16 h-px bg-gray-300 mx-auto" />
         </div>

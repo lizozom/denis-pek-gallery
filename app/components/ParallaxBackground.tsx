@@ -8,12 +8,13 @@ export default function ParallaxBackground() {
   const handleScroll = useCallback(() => {
     if (!bgRef.current) return;
     const scrollY = window.scrollY;
-    // Recalculate maxScroll every frame to handle dynamic content (infinite scroll, etc.)
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
     if (maxScroll <= 0) return;
-    // Clamp between 0 and 100 — works on any screen size
     const scrollPercent = Math.min(100, Math.max(0, (scrollY / maxScroll) * 100));
-    bgRef.current.style.backgroundPositionY = `${scrollPercent}%`;
+    // Image starts at IMAGE_TOP_OFFSET% so it sits below the heading, then scrolls to 100%
+    const IMAGE_TOP_OFFSET = 15;
+    const imagePos = IMAGE_TOP_OFFSET + scrollPercent * ((100 - IMAGE_TOP_OFFSET) / 100);
+    bgRef.current.style.backgroundPositionY = `${imagePos}%, center`;
   }, []);
 
   useEffect(() => {
@@ -39,10 +40,10 @@ export default function ParallaxBackground() {
       className="fixed inset-0 pointer-events-none"
       style={{
         backgroundImage: 'url(/bg-texture-v2.jpg), radial-gradient(ellipse at center, #919191 0%, #D1CFCF 70%)',
-        backgroundSize: 'auto 150%',
-        backgroundPositionX: 'center',
-        backgroundPositionY: '0%',
-        backgroundRepeat: 'no-repeat',
+        backgroundSize: 'auto 150%, cover',
+        backgroundPositionX: 'center, center',
+        backgroundPositionY: '15%, center',
+        backgroundRepeat: 'no-repeat, no-repeat',
         zIndex: -1,
         willChange: 'background-position',
       }}

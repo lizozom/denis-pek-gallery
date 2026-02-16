@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { GalleryImage as GalleryImageType } from '@/lib/gallery';
 
@@ -15,6 +15,26 @@ export default function GalleryImage({ image, index, onImageClick }: GalleryImag
   const [hasError, setHasError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const preloaded = useRef(false);
+
+  // Toggle class directly on DOM to avoid React batching issues
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          el.classList.add('gallery-visible');
+          el.classList.remove('gallery-hidden');
+        } else {
+          el.classList.remove('gallery-visible');
+          el.classList.add('gallery-hidden');
+        }
+      },
+      { threshold: 0 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const handleClick = () => {
     if (containerRef.current) {
@@ -35,10 +55,7 @@ export default function GalleryImage({ image, index, onImageClick }: GalleryImag
       ref={containerRef}
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
-      className="group cursor-pointer block relative overflow-hidden rounded-sm bg-gray-100"
-      style={{
-        animation: `fadeIn 0.6s ease-out ${index * 0.05}s both`,
-      }}
+      className="group cursor-pointer block relative overflow-hidden rounded-sm bg-gray-100 gallery-hidden"
     >
       {/* Loading placeholder */}
       {!isLoaded && !hasError && (
