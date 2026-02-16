@@ -1,27 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
-import Link from 'next/link';
-import { titleToSlug, GalleryImage as GalleryImageType } from '@/lib/gallery';
-import { Locale } from '@/lib/i18n';
+import { GalleryImage as GalleryImageType } from '@/lib/gallery';
 
 interface GalleryImageProps {
   image: GalleryImageType;
-  locale: Locale;
   index: number;
+  onImageClick: (image: GalleryImageType, rect: DOMRect) => void;
 }
 
-export default function GalleryImage({ image, locale, index }: GalleryImageProps) {
+export default function GalleryImage({ image, index, onImageClick }: GalleryImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const preloaded = useRef(false);
+
+  const handleClick = () => {
+    if (containerRef.current) {
+      onImageClick(image, containerRef.current.getBoundingClientRect());
+    }
+  };
+
+  // Preload full-size image on hover so it's cached before click
+  const handleMouseEnter = useCallback(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    const img = new window.Image();
+    img.src = image.src;
+  }, [image.src]);
 
   return (
-    <Link
-      href={`/${locale}/photo/${titleToSlug(image.title)}`}
+    <div
+      ref={containerRef}
+      onClick={handleClick}
+      onMouseEnter={handleMouseEnter}
       className="group cursor-pointer block relative overflow-hidden rounded-sm bg-gray-100"
       style={{
-        // Stagger fade-in animation
         animation: `fadeIn 0.6s ease-out ${index * 0.05}s both`,
       }}
     >
@@ -76,6 +91,6 @@ export default function GalleryImage({ image, locale, index }: GalleryImageProps
           </p>
         </div>
       </div>
-    </Link>
+    </div>
   );
 }

@@ -78,7 +78,7 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isSolid
-          ? 'bg-white/95 backdrop-blur-sm shadow-sm'
+          ? 'bg-white/20 backdrop-blur-md shadow-sm'
           : 'bg-transparent'
       }`}
     >
@@ -156,8 +156,8 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
         {mobileMenuOpen && (
           <div className={`md:hidden border-t py-4 ${
             isSolid
-              ? 'bg-white/95 backdrop-blur-sm border-gray-200'
-              : 'bg-gray-900/95 backdrop-blur-sm border-white/10'
+              ? 'bg-white/20 backdrop-blur-md border-gray-200/30'
+              : 'bg-gray-900/30 backdrop-blur-md border-white/10'
           }`}>
             <div className="flex flex-col gap-4">
               {isHomePage ? (
