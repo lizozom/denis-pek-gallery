@@ -12,7 +12,7 @@ export default function AboutSection({ locale }: AboutSectionProps) {
   const isEnglish = locale === 'en';
 
   return (
-    <section id="about" className="py-20 md:py-32 bg-white">
+    <section id="about" className="py-20 md:py-32">
       <div className="max-w-6xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-16">

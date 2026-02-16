@@ -15,7 +15,7 @@ export default function GallerySection({ images, locale }: GallerySectionProps) 
   const isEnglish = locale === 'en';
 
   return (
-    <section id="gallery" className="py-20 md:py-32 bg-white">
+    <section id="gallery" className="py-20 md:py-32" style={{ background: 'transparent' }}>
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">

@@ -113,7 +113,7 @@ export default function ContactSection({ locale }: ContactSectionProps) {
   };
 
   return (
-    <section id="contact" className="py-20 md:py-32 bg-gray-50">
+    <section id="contact" className="py-20 md:py-32">
       <div className="max-w-2xl mx-auto px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center mb-12">
