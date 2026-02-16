@@ -120,10 +120,7 @@ export default function ContactSection({ locale }: ContactSectionProps) {
           <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
             {t.contact.title}
           </h2>
-          <div className="w-16 h-px bg-gray-300 mx-auto mb-6" />
-          <p className="text-lg text-gray-600">
-            {t.contact.subtitle}
-          </p>
+          <div className="w-16 h-px bg-gray-300 mx-auto" />
         </div>
 
         {/* Success Message */}
@@ -170,8 +167,8 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               value={formData.name}
               onChange={handleChange}
               placeholder={t.contact.form.namePlaceholder}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
+                errors.name ? 'border-red-500' : 'border-black'
               }`}
             />
             {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
@@ -189,8 +186,8 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               value={formData.email}
               onChange={handleChange}
               placeholder={t.contact.form.emailPlaceholder}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white ${
-                errors.email ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
+                errors.email ? 'border-red-500' : 'border-black'
               }`}
             />
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
@@ -208,8 +205,8 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               value={formData.phone}
               onChange={handleChange}
               placeholder={t.contact.form.phonePlaceholder}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white ${
-                errors.phone ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
+                errors.phone ? 'border-red-500' : 'border-black'
               }`}
             />
             {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
@@ -225,8 +222,8 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               name="projectType"
               value={formData.projectType}
               onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white ${
-                errors.projectType ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
+                errors.projectType ? 'border-red-500' : 'border-black'
               }`}
             >
               <option value="">{t.contact.form.projectTypePlaceholder}</option>
@@ -251,8 +248,8 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               onChange={handleChange}
               placeholder={t.contact.form.messagePlaceholder}
               rows={5}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors resize-none bg-white ${
-                errors.message ? 'border-red-500' : 'border-gray-300'
+              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors resize-none bg-white/20 backdrop-blur-sm ${
+                errors.message ? 'border-red-500' : 'border-black'
               }`}
             />
             {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message}</p>}
