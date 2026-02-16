@@ -173,22 +173,22 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
           </div>
         </div>
 
-        {/* Dropdown Menu */}
-        {menuOpen && (
-          <div
-            className="border-t py-2 backdrop-blur-md"
-            style={{
-              borderColor: isSolid ? 'rgba(209,213,219,0.3)' : 'rgba(255,255,255,0.1)',
-              backgroundColor: isSolid ? 'rgba(255,255,255,0.2)' : 'rgba(17,24,39,0.3)',
-              color: dynamicStyle?.color || (isSolid ? '#4b5563' : 'rgba(255,255,255,0.8)'),
-            }}
-          >
-            <div className="flex flex-col">
-              {renderNavLinks()}
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Dropdown Menu — positioned absolutely so it doesn't push the toolbar down */}
+      {menuOpen && (
+        <div
+          className="absolute end-6 lg:end-8 mt-0 w-36 rounded-md overflow-hidden backdrop-blur-md"
+          style={{
+            backgroundColor: isSolid ? 'rgba(255,255,255,0.1)' : 'rgba(17,24,39,0.15)',
+            color: dynamicStyle?.color || (isSolid ? '#4b5563' : 'rgba(255,255,255,0.8)'),
+          }}
+        >
+          <div className="flex flex-col divide-y divide-black/30">
+            {renderNavLinks()}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
