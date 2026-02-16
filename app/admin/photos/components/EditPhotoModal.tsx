@@ -7,25 +7,21 @@ import type { GalleryImage } from '@/lib/gallery';
 interface EditPhotoModalProps {
   photo: GalleryImage;
   onSave: (formData: FormData) => Promise<void>;
+  onDelete: () => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-const CATEGORIES = ['Landscape', 'Portrait', 'Urban', 'Nature'];
-
 export default function EditPhotoModal({
   photo,
   onSave,
+  onDelete,
   onCancel,
   isLoading = false,
 }: EditPhotoModalProps) {
   const [title, setTitle] = useState(photo.title);
   const [alt, setAlt] = useState(photo.alt);
-  const [category, setCategory] = useState(photo.category);
-  const [heroEligible, setHeroEligible] = useState(photo.hero_eligible || false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   const validateForm = (): boolean => {
@@ -43,24 +39,6 @@ export default function EditPhotoModal({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-      if (!allowedTypes.includes(selectedFile.type)) {
-        setErrors({ ...errors, file: 'Only JPEG, PNG, WebP, and GIF files are allowed' });
-        return;
-      }
-      if (selectedFile.size > 10 * 1024 * 1024) {
-        setErrors({ ...errors, file: 'File size must be less than 10MB' });
-        return;
-      }
-      setFile(selectedFile);
-      setPreviewUrl(URL.createObjectURL(selectedFile));
-      setErrors({ ...errors, file: '' });
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -71,39 +49,16 @@ export default function EditPhotoModal({
     setIsUploading(true);
 
     try {
-      let imageUrl = photo.src;
-
-      // Upload new file if selected
-      if (file) {
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
-
-        const uploadResponse = await fetch('/api/upload', {
-          method: 'POST',
-          body: uploadFormData,
-        });
-
-        if (!uploadResponse.ok) {
-          const error = await uploadResponse.json();
-          setErrors({ ...errors, file: error.error || 'Failed to upload image' });
-          setIsUploading(false);
-          return;
-        }
-
-        const { url } = await uploadResponse.json();
-        imageUrl = url;
-      }
-
       const formData = new FormData();
       formData.append('title', title);
       formData.append('alt', alt);
-      formData.append('category', category);
-      formData.append('src', imageUrl);
-      formData.append('hero_eligible', heroEligible.toString());
+      formData.append('category', '');
+      formData.append('src', photo.src);
+      formData.append('hero_eligible', 'false');
 
       await onSave(formData);
     } catch {
-      setErrors({ ...errors, file: 'Failed to upload image' });
+      setErrors({ submit: 'Failed to save changes' });
     } finally {
       setIsUploading(false);
     }
@@ -135,11 +90,11 @@ export default function EditPhotoModal({
             {/* Image Preview */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {previewUrl ? 'New Image' : 'Current Image'}
+                Current Image
               </label>
               <div className="aspect-square w-full rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
                 <Image
-                  src={previewUrl || photo.src}
+                  src={photo.src}
                   alt={photo.alt}
                   width={400}
                   height={400}
@@ -171,25 +126,6 @@ export default function EditPhotoModal({
               </div>
 
               <div>
-                <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-                  Category *
-                </label>
-                <select
-                  id="category"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  disabled={isLoading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50"
-                >
-                  {CATEGORIES.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label htmlFor="alt" className="block text-sm font-medium text-gray-700 mb-1">
                   Alt Text *
                 </label>
@@ -205,60 +141,37 @@ export default function EditPhotoModal({
                 {errors.alt && <p className="mt-1 text-sm text-red-600">{errors.alt}</p>}
               </div>
 
-              <div>
-                <label htmlFor="file" className="block text-sm font-medium text-gray-700 mb-1">
-                  Replace Image
-                </label>
-                <input
-                  id="file"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleFileChange}
-                  disabled={isLoading || isUploading}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                />
-                <p className="mt-1 text-xs text-gray-500">Leave empty to keep current image</p>
-                {errors.file && <p className="mt-1 text-sm text-red-600">{errors.file}</p>}
-              </div>
-
-              <div>
-                <label className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={heroEligible}
-                    onChange={(e) => setHeroEligible(e.target.checked)}
-                    disabled={isLoading}
-                    className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-500 disabled:opacity-50"
-                  />
-                  <span className="text-sm font-medium text-gray-700">
-                    Hero Eligible
-                  </span>
-                  <span className="text-sm text-gray-500">
-                    (Use as homepage hero)
-                  </span>
-                </label>
-              </div>
             </form>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex justify-between pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={onDelete}
               disabled={isLoading || isUploading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
             >
-              Cancel
+              Delete
             </button>
-            <button
-              type="submit"
-              form="edit-photo-form"
-              disabled={isLoading || isUploading}
-              className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
-            >
-              {isUploading ? 'Uploading...' : isLoading ? 'Saving...' : 'Save Changes'}
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onCancel}
+                disabled={isLoading || isUploading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="edit-photo-form"
+                disabled={isLoading || isUploading}
+                className="px-4 py-2 text-sm font-medium text-white bg-gray-900 border border-transparent rounded-md shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-50"
+              >
+                {isUploading ? 'Uploading...' : isLoading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
           </div>
         </div>
       </div>

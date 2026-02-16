@@ -58,6 +58,8 @@ export default function PhotoCard({
   const handleCardClick = () => {
     if (isSelectionMode && onToggleSelect) {
       onToggleSelect(photo.id);
+    } else if (!isReordering) {
+      onEdit();
     }
   };
 
@@ -71,7 +73,7 @@ export default function PhotoCard({
       className={`group relative bg-white border-2 rounded-lg shadow-sm overflow-hidden transition-all duration-200 ${
         isReordering ? 'cursor-move hover:scale-105 hover:shadow-xl border-gray-200 hover:border-gray-400' : ''
       } ${isDragging ? 'opacity-40 scale-95' : 'opacity-100'} ${
-        isSelectionMode ? 'cursor-pointer' : ''
+        isSelectionMode || !isReordering ? 'cursor-pointer' : ''
       } ${isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200 hover:shadow-md hover:border-gray-300'}`}
     >
       {/* Selection checkbox */}
@@ -136,12 +138,15 @@ export default function PhotoCard({
           </div>
         )}
 
+        {/* Hover overlay */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-200 z-10" />
+
         {/* Image */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={photo.src}
           alt={photo.alt}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
           onError={() => setImageError(true)}
         />
       </div>
@@ -155,36 +160,8 @@ export default function PhotoCard({
           <p className="text-xs text-gray-500 mt-0.5">ID: {photo.id}</p>
         </div>
 
-        <div className="flex items-center justify-between">
-          <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium text-gray-700 bg-gray-100 rounded-full border border-gray-200">
-            {photo.category}
-          </span>
-        </div>
       </div>
 
-      {/* Hover overlay with action buttons */}
-      {!isReordering && !isSelectionMode && (
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-200 flex flex-col items-center justify-center gap-2">
-          <button
-            onClick={onEdit}
-            className="px-4 py-2 text-sm font-medium text-white bg-gray-900/90 backdrop-blur-sm rounded-md hover:bg-gray-800 transition-all transform translate-y-2 group-hover:translate-y-0 shadow-lg"
-          >
-            <svg className="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-            Edit
-          </button>
-          <button
-            onClick={onDelete}
-            className="px-4 py-2 text-sm font-medium text-white bg-red-600/90 backdrop-blur-sm rounded-md hover:bg-red-700 transition-all transform translate-y-2 group-hover:translate-y-0 delay-75 shadow-lg"
-          >
-            <svg className="inline-block w-4 h-4 mr-1.5 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-            </svg>
-            Delete
-          </button>
-        </div>
-      )}
     </div>
   );
 }

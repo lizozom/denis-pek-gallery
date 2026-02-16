@@ -47,15 +47,15 @@ export async function addPhotoAction(formData: FormData): Promise<ServerActionRe
   const src = sanitizeInput(formData.get('src') as string || '');
   const hero_eligible = formData.get('hero_eligible') === 'true';
 
-  if (!title || !alt || !category || !src) {
-    return { success: false, error: 'All fields are required' };
+  if (!src) {
+    return { success: false, error: 'Image URL is required' };
   }
 
   if (!isValidImageUrl(src)) {
     return { success: false, error: 'Invalid image URL' };
   }
 
-  const newImage = await addGalleryPhoto({ title, alt, category, src, hero_eligible });
+  const newImage = await addGalleryPhoto({ title: title || 'Untitled', alt: alt || title || 'Photo', category, src, hero_eligible });
 
   if (!newImage) {
     return { success: false, error: 'Failed to add photo' };
@@ -79,8 +79,8 @@ export async function updatePhotoAction(
   const src = sanitizeInput(formData.get('src') as string || '');
   const hero_eligible = formData.get('hero_eligible') === 'true';
 
-  if (!title || !alt || !category || !src) {
-    return { success: false, error: 'All fields are required' };
+  if (!title || !alt || !src) {
+    return { success: false, error: 'Title, alt text, and image are required' };
   }
 
   if (!isValidImageUrl(src)) {

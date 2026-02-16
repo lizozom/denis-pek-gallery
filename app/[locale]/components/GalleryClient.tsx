@@ -1,13 +1,19 @@
 "use client";
 
 import { GalleryImage } from "@/lib/gallery";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
 import GalleryImageComponent from "@/app/components/GalleryImage";
 import ImageSkeleton from "@/app/components/ImageSkeleton";
+import Image from "next/image";
 
-const IMAGES_PER_LOAD = 20; // Number of images to load at a time
+const IMAGES_PER_LOAD = 20;
+
+interface LightboxState {
+  image: GalleryImage;
+  originRect: DOMRect;
+}
 
 interface GalleryClientProps {
   images: GalleryImage[];
@@ -18,13 +24,64 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const t = getTranslations(locale);
   const [visibleCount, setVisibleCount] = useState(IMAGES_PER_LOAD);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [lightbox, setLightbox] = useState<LightboxState | null>(null);
+  const [isAnimatingIn, setIsAnimatingIn] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const imageRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
-  // Show all images (no filtering)
+  // Navigation / slide state
+  const [outgoingImage, setOutgoingImage] = useState<GalleryImage | null>(null);
+  const [slidePhase, setSlidePhase] = useState<'idle' | 'ready' | 'animating'>('idle');
+  const [slideDirection, setSlideDirection] = useState<'prev' | 'next'>('next');
+  const touchStartRef = useRef<{ x: number } | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const slidingRef = useRef(false);
+
   const filteredImages = images;
 
+  // Compute current index and nav flags
+  const currentIndex = useMemo(() => {
+    if (!lightbox) return -1;
+    return filteredImages.findIndex((img) => img.id === lightbox.image.id);
+  }, [lightbox, filteredImages]);
+  const hasPrev = currentIndex > 0;
+  const hasNext = currentIndex >= 0 && currentIndex < filteredImages.length - 1;
+
+  const goToImage = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (!lightbox || slidingRef.current) return;
+      const idx = filteredImages.findIndex((img) => img.id === lightbox.image.id);
+      const nextIdx = direction === 'prev' ? idx - 1 : idx + 1;
+      if (nextIdx < 0 || nextIdx >= filteredImages.length) return;
+
+      slidingRef.current = true;
+      setSlideDirection(direction);
+      setOutgoingImage(lightbox.image);
+      setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
+
+      // Phase 1: position track off-screen (no transition)
+      setSlidePhase('ready');
+
+      // Phase 2: animate track to final position
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setSlidePhase('animating');
+        });
+      });
+
+      // Phase 3: clean up after animation
+      setTimeout(() => {
+        setSlidePhase('idle');
+        setOutgoingImage(null);
+        slidingRef.current = false;
+      }, 380);
+    },
+    [lightbox, filteredImages]
+  );
+
   useEffect(() => {
-    // Remove initial load state after a short delay
     const timer = setTimeout(() => setIsInitialLoad(false), 100);
     return () => clearTimeout(timer);
   }, []);
@@ -38,103 +95,414 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       },
       { threshold: 0.1 }
     );
-
-    if (observerRef.current) {
-      observer.observe(observerRef.current);
-    }
-
+    if (observerRef.current) observer.observe(observerRef.current);
     return () => observer.disconnect();
   }, [visibleCount, filteredImages.length]);
 
-  const visibleImages = filteredImages.slice(0, visibleCount);
-  const columnCount = 3; // 3 column layout
+  // Keyboard handler
+  useEffect(() => {
+    if (!lightbox) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") goToImage('prev');
+      if (e.key === "ArrowRight") goToImage('next');
+    };
+    document.body.style.overflow = "hidden";
+    document.body.classList.add("lightbox-open");
+    window.addEventListener("keydown", handleKey);
+    return () => {
+      document.body.style.overflow = "";
+      document.body.classList.remove("lightbox-open");
+      window.removeEventListener("keydown", handleKey);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lightbox, goToImage]);
 
-  // Distribute images across columns
+  // Preload adjacent images
+  useEffect(() => {
+    if (!lightbox || currentIndex < 0) return;
+    const toPreload: string[] = [];
+    if (currentIndex > 0) toPreload.push(filteredImages[currentIndex - 1].src);
+    if (currentIndex < filteredImages.length - 1) toPreload.push(filteredImages[currentIndex + 1].src);
+    toPreload.forEach((src) => {
+      const img = new window.Image();
+      img.src = src;
+    });
+  }, [lightbox, currentIndex, filteredImages]);
+
+  const handleImageClick = useCallback((image: GalleryImage, rect: DOMRect) => {
+    setLightbox({ image, originRect: rect });
+    setIsAnimatingIn(true);
+    setIsOpen(false);
+    setIsClosing(false);
+    // Trigger the transition to full screen on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setIsOpen(true);
+        setIsAnimatingIn(false);
+      });
+    });
+  }, []);
+
+  const closeLightbox = useCallback(() => {
+    setIsClosing(true);
+    setIsOpen(false);
+    // Wait for the closing animation to finish
+    setTimeout(() => {
+      setLightbox(null);
+      setIsClosing(false);
+    }, 400);
+  }, []);
+
+  const visibleImages = filteredImages.slice(0, visibleCount);
+  const columnCount = 3;
+
   const columns: GalleryImage[][] = Array.from({ length: columnCount }, () => []);
   visibleImages.forEach((image, index) => {
     columns[index % columnCount].push(image);
   });
 
+  // Calculate the starting transform from thumbnail to center
+  const getImageStyle = (): React.CSSProperties => {
+    if (!lightbox) return {};
+    const { originRect } = lightbox;
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    if (isAnimatingIn || isClosing) {
+      // Position at the thumbnail's location
+      return {
+        position: 'fixed',
+        top: originRect.top,
+        left: originRect.left,
+        width: originRect.width,
+        height: originRect.height,
+        transition: isClosing ? 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+        zIndex: 68,
+      };
+    }
+
+    if (isOpen) {
+      // Animate to full screen center
+      const padding = vw * 0.05; // 5% padding
+      return {
+        position: 'fixed',
+        top: padding,
+        left: padding,
+        width: vw - padding * 2,
+        height: vh - padding * 2,
+        transition: 'all 0.5s cubic-bezier(0.05, 0.8, 0.2, 1)',
+        zIndex: 68,
+      };
+    }
+
+    return {};
+  };
+
+  // Track style for button/keyboard slide animation
+  const getTrackStyle = (): React.CSSProperties => {
+    if (slidePhase === 'ready') {
+      return {
+        transform: slideDirection === 'next' ? 'translateX(0%)' : 'translateX(-50%)',
+        transition: 'none',
+      };
+    }
+    if (slidePhase === 'animating') {
+      return {
+        transform: slideDirection === 'next' ? 'translateX(-50%)' : 'translateX(0%)',
+        transition: 'transform 350ms cubic-bezier(0.25, 0.1, 0.25, 1)',
+      };
+    }
+    return {};
+  };
+
   return (
-    <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
-      {/* Show skeletons on initial load */}
-      {isInitialLoad && images.length === 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <ImageSkeleton key={i} aspectRatio={i % 3 === 0 ? 'portrait' : 'square'} />
-          ))}
-        </div>
-      ) : (
-        <>
-          {/* 3 column masonry grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {columns.map((column, columnIndex) => (
-              <div key={columnIndex} className="flex flex-col gap-4">
-                {column.map((image, imageIndex) => (
-                  <GalleryImageComponent
-                    key={image.id}
-                    image={image}
-                    locale={locale}
-                    index={columnIndex * columnCount + imageIndex}
-                  />
-                ))}
-              </div>
+    <>
+      <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        {isInitialLoad && images.length === 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 9 }).map((_, i) => (
+              <ImageSkeleton key={i} aspectRatio={i % 3 === 0 ? 'portrait' : 'square'} />
             ))}
           </div>
-
-          {/* Infinite scroll trigger */}
-          <div ref={observerRef} className="h-20 w-full" />
-
-          {/* Loading indicator */}
-          {visibleCount < filteredImages.length && (
-            <div className="text-center py-8">
-              <div className="inline-flex items-center gap-2 text-gray-500">
-                <svg
-                  className="animate-spin h-5 w-5"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                <span className="text-sm">{t.loading}</span>
-              </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {columns.map((column, columnIndex) => (
+                <div key={columnIndex} className="flex flex-col gap-4">
+                  {column.map((image, imageIndex) => (
+                    <GalleryImageComponent
+                      key={image.id}
+                      image={image}
+                      index={columnIndex * columnCount + imageIndex}
+                      onImageClick={handleImageClick}
+                    />
+                  ))}
+                </div>
+              ))}
             </div>
+
+            <div ref={observerRef} className="h-20 w-full" />
+
+            {visibleCount < filteredImages.length && (
+              <div className="text-center py-8">
+                <div className="inline-flex items-center gap-2 text-gray-500">
+                  <svg
+                    className="animate-spin h-5 w-5"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  <span className="text-sm">{t.loading}</span>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {!isInitialLoad && filteredImages.length === 0 && (
+          <div className="text-center py-16">
+            <svg className="mx-auto h-16 w-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p className="mt-4 text-gray-500">No photos available</p>
+          </div>
+        )}
+      </main>
+
+      {/* Lightbox */}
+      {lightbox && (
+        <>
+          {/* Blurred backdrop */}
+          <div
+            className="fixed inset-0 z-[66]"
+            onClick={closeLightbox}
+            style={{
+              backdropFilter: isOpen ? 'blur(12px)' : 'blur(0px)',
+              backgroundColor: isOpen ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
+              transition: 'all 0.5s cubic-bezier(0.05, 0.8, 0.2, 1)',
+            }}
+          />
+
+          {/* Close button */}
+          <button
+            onClick={closeLightbox}
+            className="fixed top-4 right-4 z-[70] p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
+            style={{
+              opacity: isOpen ? 1 : 0,
+              transition: 'opacity 0.3s ease 0.2s',
+              zIndex: 70,
+            }}
+          >
+            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Prev arrow */}
+          {hasPrev && (
+            <button
+              onClick={() => goToImage('prev')}
+              className="fixed left-4 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transition: 'opacity 0.3s ease 0.2s',
+                zIndex: 70,
+              }}
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
           )}
+
+          {/* Next arrow */}
+          {hasNext && (
+            <button
+              onClick={() => goToImage('next')}
+              className="fixed right-4 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transition: 'opacity 0.3s ease 0.2s',
+                zIndex: 70,
+              }}
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+
+          {/* Animated image container */}
+          <div
+            ref={imageRef}
+            style={getImageStyle()}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              if (slidingRef.current) return;
+              touchStartRef.current = { x: e.touches[0].clientX };
+              setSwipeOffset(0);
+            }}
+            onTouchMove={(e) => {
+              if (!touchStartRef.current || slidingRef.current) return;
+              const dx = e.touches[0].clientX - touchStartRef.current.x;
+              if (dx < 0 && hasNext) {
+                setSlideDirection('next');
+                setSwipeOffset(dx);
+              } else if (dx > 0 && hasPrev) {
+                setSlideDirection('prev');
+                setSwipeOffset(dx);
+              } else {
+                setSwipeOffset(0);
+              }
+            }}
+            onTouchEnd={() => {
+              if (!touchStartRef.current) return;
+              const offset = swipeOffset;
+              touchStartRef.current = null;
+              setSwipeOffset(0);
+              if (offset < -60 && hasNext) {
+                goToImage('next');
+              } else if (offset > 60 && hasPrev) {
+                goToImage('prev');
+              }
+            }}
+          >
+            <div className="absolute inset-0 overflow-hidden">
+              {(() => {
+                // Determine if we're sliding (button nav) or swiping (touch drag)
+                const isSliding = outgoingImage && slidePhase !== 'idle';
+                const isSwiping = swipeOffset !== 0;
+
+                if (isSliding) {
+                  // Button/keyboard navigation: outgoingImage is the old image, lightbox.image is the new one
+                  const oldImg = outgoingImage;
+                  const newImg = lightbox.image;
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute', top: 0, left: 0,
+                        width: '200%', height: '100%', display: 'flex',
+                        ...getTrackStyle(),
+                      }}
+                    >
+                      {slideDirection === 'next' ? (
+                        <>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={oldImg.src} alt={oldImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={newImg.src} alt={newImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={newImg.src} alt={newImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={oldImg.src} alt={oldImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                }
+
+                if (isSwiping) {
+                  // Live touch drag: lightbox.image is still the current image, peek at adjacent
+                  const currentImg = lightbox.image;
+                  const peekIdx = slideDirection === 'next' ? currentIndex + 1 : currentIndex - 1;
+                  const peekImg = filteredImages[peekIdx];
+                  if (!peekImg) return null;
+
+                  // Convert pixel offset to % of track (track is 200% wide, so 50% = one viewport)
+                  const pxToPercent = (swipeOffset / window.innerWidth) * 50;
+
+                  return (
+                    <div
+                      style={{
+                        position: 'absolute', top: 0, left: 0,
+                        width: '200%', height: '100%', display: 'flex',
+                        transform: slideDirection === 'next'
+                          ? `translateX(${Math.min(0, Math.max(-50, pxToPercent))}%)`
+                          : `translateX(${Math.min(0, Math.max(-50, -50 + pxToPercent))}%)`,
+                        transition: 'none',
+                      }}
+                    >
+                      {slideDirection === 'next' ? (
+                        <>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={currentImg.src} alt={currentImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={peekImg.src} alt={peekImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={peekImg.src} alt={peekImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={currentImg.src} alt={currentImg.alt} className="absolute inset-0 w-full h-full object-contain" />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                }
+
+                // Static single image (no animation)
+                return (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={lightbox.image.src}
+                      alt={lightbox.image.alt}
+                      className="absolute inset-0 w-full h-full object-contain"
+                    />
+                    <Image
+                      src={lightbox.image.src}
+                      alt={lightbox.image.alt}
+                      fill
+                      className="object-contain"
+                      sizes="90vw"
+                      quality={95}
+                      priority
+                    />
+                  </>
+                );
+              })()}
+            </div>
+
+            {/* Title — inside image container so it's relative to the image */}
+            <div
+              className="absolute bottom-3 left-0 right-0 text-center z-10"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'all 0.4s ease 0.15s',
+              }}
+            >
+              <h3 className="text-white text-xl font-light tracking-wide drop-shadow-lg">
+                {lightbox.image.title}
+              </h3>
+            </div>
+          </div>
         </>
       )}
-
-      {/* Empty state */}
-      {!isInitialLoad && filteredImages.length === 0 && (
-        <div className="text-center py-16">
-          <svg
-            className="mx-auto h-16 w-16 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <p className="mt-4 text-gray-500">No photos available</p>
-        </div>
-      )}
-    </main>
+    </>
   );
 }
