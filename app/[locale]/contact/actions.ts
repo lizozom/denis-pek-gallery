@@ -5,18 +5,18 @@ import { sendContactEmail } from '@/lib/email';
 interface ContactFormData {
   name: string;
   email: string;
-  phone: string;
-  projectType: string;
+  phone?: string;
+  projectType?: string;
   message: string;
 }
 
 export async function submitContactForm(data: ContactFormData) {
   try {
     // Validate data (server-side validation)
-    if (!data.name || !data.email || !data.phone || !data.projectType || !data.message) {
+    if (!data.name || !data.email || !data.message) {
       return {
         success: false,
-        error: 'All fields are required',
+        error: 'Name, email, and message are required',
       };
     }
 

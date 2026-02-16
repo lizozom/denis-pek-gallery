@@ -1,8 +1,8 @@
 interface ContactFormData {
   name: string;
   email: string;
-  phone: string;
-  projectType: string;
+  phone?: string;
+  projectType?: string;
   message: string;
 }
 
@@ -26,8 +26,8 @@ export async function sendContactEmail(data: ContactFormData): Promise<void> {
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log(`Name: ${data.name}`);
     console.log(`Email: ${data.email}`);
-    console.log(`Phone: ${data.phone}`);
-    console.log(`Project Type: ${getProjectTypeLabel(data.projectType)}`);
+    if (data.phone) console.log(`Phone: ${data.phone}`);
+    if (data.projectType) console.log(`Project Type: ${getProjectTypeLabel(data.projectType)}`);
     console.log(`Message: ${data.message}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('💡 To enable email sending, add RESEND_API_KEY to your .env.local file');
@@ -47,7 +47,7 @@ export async function sendContactEmail(data: ContactFormData): Promise<void> {
         from: 'Denis Pekerman Gallery <noreply@denispekerman.com>',
         to: process.env.CONTACT_EMAIL || 'contact@denispekerman.com',
         reply_to: data.email,
-        subject: `New Contact Form Submission - ${getProjectTypeLabel(data.projectType)}`,
+        subject: `New Contact Form Submission${data.projectType ? ` - ${getProjectTypeLabel(data.projectType)}` : ''}`,
         html: `
           <!DOCTYPE html>
           <html>
@@ -122,14 +122,14 @@ export async function sendContactEmail(data: ContactFormData): Promise<void> {
                   <div class="label">Email</div>
                   <div class="value"><a href="mailto:${data.email}" style="color: #667eea; text-decoration: none;">${data.email}</a></div>
                 </div>
-                <div class="field">
+                ${data.phone ? `<div class="field">
                   <div class="label">Phone</div>
                   <div class="value"><a href="tel:${data.phone}" style="color: #667eea; text-decoration: none;">${data.phone}</a></div>
-                </div>
-                <div class="field">
+                </div>` : ''}
+                ${data.projectType ? `<div class="field">
                   <div class="label">Project Type</div>
                   <div class="value">${getProjectTypeLabel(data.projectType)}</div>
-                </div>
+                </div>` : ''}
                 <div class="field">
                   <div class="label">Message</div>
                   <div class="message-box">${data.message}</div>
