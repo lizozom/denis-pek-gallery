@@ -227,8 +227,8 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
+    <div className="min-h-screen" style={{ backgroundColor: '#808080' }}>
+      <header className="shadow-sm border-b border-gray-200" style={{ backgroundColor: '#BABABA' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
@@ -448,6 +448,7 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
         <EditPhotoModal
           photo={editingPhoto}
           onSave={(formData) => handleUpdatePhoto(editingPhoto.id, formData)}
+          onDelete={() => { setEditingPhoto(null); setDeleteConfirm(editingPhoto); }}
           onCancel={() => setEditingPhoto(null)}
           isLoading={isLoading}
         />

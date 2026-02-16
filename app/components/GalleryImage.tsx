@@ -103,9 +103,6 @@ export default function GalleryImage({ image, index, onImageClick }: GalleryImag
           <h3 className="text-white text-lg sm:text-xl font-light tracking-wide">
             {image.title}
           </h3>
-          <p className="text-white/70 text-xs sm:text-sm mt-1 font-light uppercase tracking-wider">
-            {image.category}
-          </p>
         </div>
       </div>
     </div>

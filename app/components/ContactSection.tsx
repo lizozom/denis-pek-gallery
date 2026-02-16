@@ -12,16 +12,12 @@ interface ContactSectionProps {
 interface FormData {
   name: string;
   email: string;
-  phone: string;
-  projectType: string;
   message: string;
 }
 
 interface FormErrors {
   name?: string;
   email?: string;
-  phone?: string;
-  projectType?: string;
   message?: string;
 }
 
@@ -31,8 +27,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
-    phone: '',
-    projectType: '',
     message: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
@@ -50,18 +44,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
       newErrors.email = t.contact.validation.emailRequired;
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = t.contact.validation.emailInvalid;
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = t.contact.validation.phoneRequired;
-    }
-
-    if (!formData.projectType) {
-      newErrors.projectType = t.contact.validation.projectTypeRequired;
-    }
-
-    if (!formData.message.trim()) {
-      newErrors.message = t.contact.validation.messageRequired;
     }
 
     setErrors(newErrors);
@@ -86,8 +68,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
         setFormData({
           name: '',
           email: '',
-          phone: '',
-          projectType: '',
           message: '',
         });
         setErrors({});
@@ -103,7 +83,7 @@ export default function ContactSection({ locale }: ContactSectionProps) {
   };
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -191,49 +171,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
               }`}
             />
             {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label htmlFor="contact-phone" className="block text-sm font-medium text-gray-900 mb-2">
-              {t.contact.form.phone}
-            </label>
-            <input
-              type="tel"
-              id="contact-phone"
-              name="phone"
-              value={formData.phone}
-              onChange={handleChange}
-              placeholder={t.contact.form.phonePlaceholder}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
-                errors.phone ? 'border-red-500' : 'border-black'
-              }`}
-            />
-            {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-          </div>
-
-          {/* Project Type */}
-          <div>
-            <label htmlFor="contact-projectType" className="block text-sm font-medium text-gray-900 mb-2">
-              {t.contact.form.projectType}
-            </label>
-            <select
-              id="contact-projectType"
-              name="projectType"
-              value={formData.projectType}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-transparent transition-colors bg-white/20 backdrop-blur-sm ${
-                errors.projectType ? 'border-red-500' : 'border-black'
-              }`}
-            >
-              <option value="">{t.contact.form.projectTypePlaceholder}</option>
-              <option value="architectural">{t.contact.projectTypes.architectural}</option>
-              <option value="interior">{t.contact.projectTypes.interior}</option>
-              <option value="realEstate">{t.contact.projectTypes.realEstate}</option>
-              <option value="commercial">{t.contact.projectTypes.commercial}</option>
-              <option value="other">{t.contact.projectTypes.other}</option>
-            </select>
-            {errors.projectType && <p className="mt-1 text-sm text-red-600">{errors.projectType}</p>}
           </div>
 
           {/* Message */}

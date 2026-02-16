@@ -58,9 +58,11 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       if (e.key === "Escape") closeLightbox();
     };
     document.body.style.overflow = "hidden";
+    document.body.classList.add("lightbox-open");
     window.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
+      document.body.classList.remove("lightbox-open");
       window.removeEventListener("keydown", handleKey);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -114,7 +116,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
         width: originRect.width,
         height: originRect.height,
         transition: isClosing ? 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
-        zIndex: 60,
+        zIndex: 68,
       };
     }
 
@@ -128,7 +130,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
         width: vw - padding * 2,
         height: vh - padding * 2,
         transition: 'all 0.5s cubic-bezier(0.05, 0.8, 0.2, 1)',
-        zIndex: 60,
+        zIndex: 68,
       };
     }
 
@@ -197,7 +199,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
         <>
           {/* Blurred backdrop */}
           <div
-            className="fixed inset-0 z-50"
+            className="fixed inset-0 z-[66]"
             onClick={closeLightbox}
             style={{
               backdropFilter: isOpen ? 'blur(12px)' : 'blur(0px)',
@@ -209,7 +211,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
           {/* Close button */}
           <button
             onClick={closeLightbox}
-            className="fixed top-4 right-4 z-[70] p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors"
+            className="fixed top-4 right-4 z-[70] p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
             style={{
               opacity: isOpen ? 1 : 0,
               transition: 'opacity 0.3s ease 0.2s',
@@ -243,23 +245,20 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
               quality={95}
               priority
             />
-          </div>
 
-          {/* Title */}
-          <div
-            className="fixed bottom-6 left-0 right-0 z-[70] text-center"
-            style={{
-              opacity: isOpen ? 1 : 0,
-              transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
-              transition: 'all 0.4s ease 0.15s',
-            }}
-          >
-            <h3 className="text-white text-xl font-light tracking-wide">
-              {lightbox.image.title}
-            </h3>
-            <p className="text-white/60 text-sm mt-1 uppercase tracking-wider">
-              {lightbox.image.category}
-            </p>
+            {/* Title — inside image container so it's relative to the image */}
+            <div
+              className="absolute bottom-3 left-0 right-0 text-center z-10"
+              style={{
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
+                transition: 'all 0.4s ease 0.15s',
+              }}
+            >
+              <h3 className="text-white text-xl font-light tracking-wide drop-shadow-lg">
+                {lightbox.image.title}
+              </h3>
+            </div>
           </div>
         </>
       )}
