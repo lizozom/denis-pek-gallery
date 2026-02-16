@@ -38,8 +38,8 @@ export default function ParallaxBackground() {
       ref={bgRef}
       className="fixed inset-0 pointer-events-none"
       style={{
-        backgroundImage: 'url(/bg-texture.jpg), radial-gradient(ellipse at center, #919191 0%, #D1CFCF 70%)',
-        backgroundSize: 'cover',
+        backgroundImage: 'url(/bg-texture-v2.jpg), radial-gradient(ellipse at center, #919191 0%, #D1CFCF 70%)',
+        backgroundSize: 'auto 150%',
         backgroundPositionX: 'center',
         backgroundPositionY: '0%',
         backgroundRepeat: 'no-repeat',
