@@ -8,9 +8,10 @@ interface GalleryImageProps {
   image: GalleryImageType;
   index: number;
   onImageClick: (image: GalleryImageType, rect: DOMRect) => void;
+  isActive?: boolean;
 }
 
-export default function GalleryImage({ image, index, onImageClick }: GalleryImageProps) {
+export default function GalleryImage({ image, index, onImageClick, isActive }: GalleryImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,6 +57,7 @@ export default function GalleryImage({ image, index, onImageClick }: GalleryImag
       onClick={handleClick}
       onMouseEnter={handleMouseEnter}
       className="group cursor-pointer block relative overflow-hidden rounded-sm bg-gray-100 gallery-hidden"
+      style={isActive ? { opacity: 0 } : undefined}
     >
       {/* Loading placeholder */}
       {!isLoaded && !hasError && (

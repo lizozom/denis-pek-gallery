@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Locale } from '@/lib/i18n';
 import { getTranslations } from '@/lib/translations';
 import { submitContactForm } from '@/app/[locale]/contact/actions';
-import { SITE_CONFIG } from '@/lib/config';
 
 interface ContactSectionProps {
   locale: Locale;
@@ -101,13 +100,7 @@ export default function ContactSection({ locale }: ContactSectionProps) {
           <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
             {t.contact.title}
           </h2>
-          <div className="w-16 h-px bg-gray-300 mx-auto mb-4" />
-          <a
-            href={`mailto:${SITE_CONFIG.author.email}`}
-            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
-          >
-            {SITE_CONFIG.author.email}
-          </a>
+          <div className="w-16 h-px bg-gray-300 mx-auto" />
         </div>
 
         {/* Success Message */}

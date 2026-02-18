@@ -134,7 +134,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     return () => observer.disconnect();
   }, [visibleCount, filteredImages.length]);
 
-  // Keyboard handler
+  // Keyboard + body lock (toolbar hide is handled in handleImageClick/closeLightbox)
   useEffect(() => {
     if (!lightbox) return;
     const handleKey = (e: KeyboardEvent) => {
@@ -143,11 +143,9 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       if (e.key === "ArrowRight") goToImage('next');
     };
     document.body.style.overflow = "hidden";
-    document.body.classList.add("lightbox-open");
     window.addEventListener("keydown", handleKey);
     return () => {
       document.body.style.overflow = "";
-      document.body.classList.remove("lightbox-open");
       window.removeEventListener("keydown", handleKey);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -166,21 +164,32 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   }, [lightbox, currentIndex, filteredImages]);
 
   const handleImageClick = useCallback((image: GalleryImage, rect: DOMRect) => {
-    setLightbox({ image, originRect: rect });
-    setIsAnimatingIn(true);
-    setIsOpen(false);
-    setIsClosing(false);
-    requestAnimationFrame(() => {
+    // Step 1: fade toolbar out first
+    document.body.classList.add("lightbox-open");
+
+    // Step 2: start image zoom shortly after toolbar begins fading
+    setTimeout(() => {
+      setLightbox({ image, originRect: rect });
+      setIsAnimatingIn(true);
+      setIsOpen(false);
+      setIsClosing(false);
       requestAnimationFrame(() => {
-        setIsOpen(true);
-        setIsAnimatingIn(false);
+        requestAnimationFrame(() => {
+          setIsOpen(true);
+          setIsAnimatingIn(false);
+        });
       });
-    });
+    }, 150);
   }, []);
 
   const closeLightbox = useCallback(() => {
     setIsClosing(true);
     setIsOpen(false);
+    // Start toolbar fade-in when image is ~80% back
+    setTimeout(() => {
+      document.body.classList.remove("lightbox-open");
+    }, 300);
+    // Clean up lightbox after image finishes animating
     setTimeout(() => {
       setLightbox(null);
       setIsClosing(false);
@@ -253,13 +262,14 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
 
     if (isOpen) {
       const padding = vw * 0.05;
+      const bottomPadding = padding + 40; // extra space for title
       return {
         position: 'fixed',
         top: padding,
         left: padding,
         width: vw - padding * 2,
-        height: vh - padding * 2,
-        transition: 'all 0.5s cubic-bezier(0.05, 0.8, 0.2, 1)',
+        height: vh - padding - bottomPadding,
+        transition: 'all 0.55s cubic-bezier(0.25, 0.6, 0.1, 1)',
         zIndex: 68,
       };
     }
@@ -294,6 +304,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
                       image={image}
                       index={columnIndex * columnCount + imageIndex}
                       onImageClick={handleImageClick}
+                      isActive={!!lightbox && !isClosing && lightbox.image.id === image.id}
                     />
                   ))}
                 </div>
@@ -366,7 +377,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
           {hasPrev && (
             <button
               onClick={() => goToImage('prev')}
-              className="lightbox-control fixed left-2 top-1/2 -translate-y-1/2 z-[70] flex items-center justify-center"
+              className="lightbox-control fixed left-2 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center"
               style={controlStyle}
               aria-label="Previous image"
             >
@@ -383,7 +394,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
           {hasNext && (
             <button
               onClick={() => goToImage('next')}
-              className="lightbox-control fixed right-2 top-1/2 -translate-y-1/2 z-[70] flex items-center justify-center"
+              className="lightbox-control fixed right-2 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center"
               style={controlStyle}
               aria-label="Next image"
             >
@@ -475,19 +486,51 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
               </div>
             </div>
 
-            {/* Title */}
-            <div
-              className="absolute bottom-3 left-0 right-0 text-center z-10"
-              style={{
-                opacity: isOpen && transitionPhase === 'idle' ? 1 : 0,
-                transform: isOpen && transitionPhase === 'idle' ? 'translateY(0)' : 'translateY(10px)',
+          </div>
+
+          {/* Titles — crossfade + slide in sync with images */}
+          <div className="fixed left-0 right-0 bottom-3 text-center z-[69]" style={{ overflow: 'hidden' }}>
+            {/* Outgoing title */}
+            {transitionPhase !== 'idle' && outgoingImage && (
+              <h3
+                className="text-white text-xl font-light tracking-wide drop-shadow-lg absolute inset-x-0"
+                style={{
+                  opacity: transitionPhase === 'setup' ? 1 : 0,
+                  transform: transitionPhase === 'setup'
+                    ? 'translateX(0)'
+                    : transitionDirection === 'next'
+                      ? 'translateX(-8%)'
+                      : 'translateX(8%)',
+                  transition: transitionPhase === 'animate'
+                    ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    : 'none',
+                }}
+              >
+                {outgoingImage.title}
+              </h3>
+            )}
+
+            {/* Current title */}
+            <h3
+              className="text-white text-xl font-light tracking-wide drop-shadow-lg"
+              style={transitionPhase !== 'idle' ? {
+                opacity: transitionPhase === 'setup' ? 0 : 1,
+                transform: transitionPhase === 'setup'
+                  ? transitionDirection === 'next'
+                    ? 'translateX(8%)'
+                    : 'translateX(-8%)'
+                  : 'translateX(0)',
+                transition: transitionPhase === 'animate'
+                  ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
+                  : 'none',
+              } : {
+                opacity: isOpen ? 1 : 0,
+                transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
                 transition: 'all 0.4s ease 0.15s',
               }}
             >
-              <h3 className="text-white text-xl font-light tracking-wide drop-shadow-lg">
-                {lightbox.image.title}
-              </h3>
-            </div>
+              {lightbox.image.title}
+            </h3>
           </div>
         </>
       )}

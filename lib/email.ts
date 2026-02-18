@@ -45,9 +45,9 @@ export async function sendContactEmail(data: ContactFormData): Promise<void> {
       },
       body: JSON.stringify({
         from: 'Denis Pekerman Gallery <noreply@denispekerman.com>',
-        to: process.env.CONTACT_EMAIL || 'contact@denispekerman.com',
+        to: process.env.CONTACT_EMAIL || 'denis.pek.art@gmail.com',
         reply_to: data.email,
-        subject: `New Contact Form Submission${data.projectType ? ` - ${getProjectTypeLabel(data.projectType)}` : ''}`,
+        subject: `Gallery - ${data.name}`,
         html: `
           <!DOCTYPE html>
           <html>

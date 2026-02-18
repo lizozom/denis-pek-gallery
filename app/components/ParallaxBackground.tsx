@@ -49,11 +49,12 @@ export default function ParallaxBackground() {
       ref={bgRef}
       className="fixed inset-0 pointer-events-none"
       style={{
-        backgroundImage: 'url(/bg-texture-v2.jpg), radial-gradient(ellipse at center, #919191 0%, #D1CFCF 70%)',
-        backgroundSize: 'auto 150%, cover',
-        backgroundPositionX: 'center, center',
-        backgroundPositionY: '15%, center',
-        backgroundRepeat: 'no-repeat, no-repeat',
+        backgroundColor: '#909090',
+        backgroundImage: 'url(/bg-texture-v2.jpg)',
+        backgroundSize: 'auto 150%',
+        backgroundPositionX: 'center',
+        backgroundPositionY: '15%',
+        backgroundRepeat: 'no-repeat',
         zIndex: -1,
         willChange: 'background-position',
       }}
