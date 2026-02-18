@@ -4,11 +4,16 @@ import { useEffect, useRef, useCallback } from 'react';
 
 export default function ParallaxBackground() {
   const bgRef = useRef<HTMLDivElement>(null);
+  // Capture viewport height once so mobile address-bar resize doesn't cause jumps
+  const stableHeightRef = useRef(0);
 
   const handleScroll = useCallback(() => {
     if (!bgRef.current) return;
+    if (stableHeightRef.current === 0) {
+      stableHeightRef.current = window.innerHeight;
+    }
     const scrollY = window.scrollY;
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const maxScroll = document.documentElement.scrollHeight - stableHeightRef.current;
     if (maxScroll <= 0) return;
     const scrollPercent = Math.min(100, Math.max(0, (scrollY / maxScroll) * 100));
     // Image starts at IMAGE_TOP_OFFSET% so it sits below the heading, then scrolls to 100%
@@ -18,9 +23,14 @@ export default function ParallaxBackground() {
   }, []);
 
   useEffect(() => {
-    // Listen for scroll and resize
+    // Reset stable height on orientation change (genuine viewport change, not address-bar)
+    const handleOrientation = () => {
+      stableHeightRef.current = 0;
+      handleScroll();
+    };
+
     window.addEventListener('scroll', handleScroll, { passive: true });
-    window.addEventListener('resize', handleScroll, { passive: true });
+    window.addEventListener('orientationchange', handleOrientation);
 
     // Also observe DOM size changes (e.g. infinite scroll adding content)
     const observer = new ResizeObserver(handleScroll);
@@ -29,7 +39,7 @@ export default function ParallaxBackground() {
     handleScroll();
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      window.removeEventListener('resize', handleScroll);
+      window.removeEventListener('orientationchange', handleOrientation);
       observer.disconnect();
     };
   }, [handleScroll]);

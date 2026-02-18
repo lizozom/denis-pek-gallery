@@ -14,14 +14,13 @@ export const SITE_CONFIG = {
   },
   author: {
     name: 'Denis Pekerman',
-    email: 'contact@denispekerman.com',
+    email: 'Denis.pek.art@gmail.com',
   },
 } as const;
 
 export const SOCIAL_LINKS = {
   instagram: 'https://www.instagram.com/denis.pek.architecture/',
-  facebook: 'https://facebook.com/denispekerman',
-  behance: 'https://behance.net/denispekerman',
+  facebook: 'https://www.facebook.com/profile.php?id=100084162872699',
 } as const;
 
 export const SEO_CONFIG = {

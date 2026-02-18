@@ -20,7 +20,6 @@ export function generateOrganizationSchema() {
     sameAs: [
       SOCIAL_LINKS.instagram,
       SOCIAL_LINKS.facebook,
-      SOCIAL_LINKS.behance,
     ],
     contactPoint: {
       '@type': 'ContactPoint',
@@ -65,7 +64,6 @@ export function generateLocalBusinessSchema() {
     sameAs: [
       SOCIAL_LINKS.instagram,
       SOCIAL_LINKS.facebook,
-      SOCIAL_LINKS.behance,
     ],
   };
 }
@@ -88,7 +86,6 @@ export function generatePersonSchema() {
     sameAs: [
       SOCIAL_LINKS.instagram,
       SOCIAL_LINKS.facebook,
-      SOCIAL_LINKS.behance,
     ],
     knowsAbout: [
       'Architectural Photography',

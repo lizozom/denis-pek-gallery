@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Locale } from '@/lib/i18n';
 import { getTranslations } from '@/lib/translations';
 import { submitContactForm } from '@/app/[locale]/contact/actions';
+import { SITE_CONFIG } from '@/lib/config';
 
 interface ContactSectionProps {
   locale: Locale;
@@ -100,7 +101,13 @@ export default function ContactSection({ locale }: ContactSectionProps) {
           <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${isEnglish ? 'italic' : ''} mb-4`}>
             {t.contact.title}
           </h2>
-          <div className="w-16 h-px bg-gray-300 mx-auto" />
+          <div className="w-16 h-px bg-gray-300 mx-auto mb-4" />
+          <a
+            href={`mailto:${SITE_CONFIG.author.email}`}
+            className="text-sm text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            {SITE_CONFIG.author.email}
+          </a>
         </div>
 
         {/* Success Message */}
@@ -137,9 +144,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div>
-            <label htmlFor="contact-name" className="block text-sm font-medium text-gray-900 mb-2">
-              {t.contact.form.name}
-            </label>
             <input
               type="text"
               id="contact-name"
@@ -156,9 +160,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
 
           {/* Email */}
           <div>
-            <label htmlFor="contact-email" className="block text-sm font-medium text-gray-900 mb-2">
-              {t.contact.form.email}
-            </label>
             <input
               type="email"
               id="contact-email"
@@ -175,9 +176,6 @@ export default function ContactSection({ locale }: ContactSectionProps) {
 
           {/* Message */}
           <div>
-            <label htmlFor="contact-message" className="block text-sm font-medium text-gray-900 mb-2">
-              {t.contact.form.message}
-            </label>
             <textarea
               id="contact-message"
               name="message"

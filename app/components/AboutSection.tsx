@@ -24,7 +24,7 @@ export default function AboutSection({ locale }: AboutSectionProps) {
 
         {/* Bio */}
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-lg text-[#403F3F] leading-relaxed whitespace-pre-line font-heading">
+          <p className="text-lg text-[#1A1A1A] leading-relaxed whitespace-pre-line font-heading">
             {t.about.bio}
           </p>
         </div>
