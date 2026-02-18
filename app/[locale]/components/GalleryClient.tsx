@@ -31,8 +31,8 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const imageRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
-  // New navigation state
-  const [transitioning, setTransitioning] = useState(false);
+  // Navigation state — two-phase approach for reliable animation
+  const [transitionPhase, setTransitionPhase] = useState<'idle' | 'setup' | 'animate'>('idle');
   const [outgoingImage, setOutgoingImage] = useState<GalleryImage | null>(null);
   const [transitionDirection, setTransitionDirection] = useState<'prev' | 'next'>('next');
   const [controlsVisible, setControlsVisible] = useState(true);
@@ -82,6 +82,8 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   }, [lightbox, isOpen, resetHideTimer]);
 
   // --- Navigation ---
+  // Two-phase transition: 'setup' positions incoming off-screen (no transition),
+  // then 'animate' slides/fades both images to their final positions.
   const goToImage = useCallback(
     (direction: 'prev' | 'next') => {
       if (!lightbox || transitioningRef.current) return;
@@ -90,21 +92,26 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       if (nextIdx < 0 || nextIdx >= filteredImages.length) return;
 
       transitioningRef.current = true;
-      setTransitioning(true);
       setTransitionDirection(direction);
       setOutgoingImage(lightbox.image);
+      setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
 
-      // Small delay to let outgoing start its exit, then swap
+      // Phase 1: 'setup' — render both images, incoming positioned off-screen, no transition
+      setTransitionPhase('setup');
+
+      // Phase 2: after browser paints the setup frame, enable transitions and animate
       requestAnimationFrame(() => {
-        setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
-
-        // Transition duration matches CSS (450ms)
-        setTimeout(() => {
-          setTransitioning(false);
-          setOutgoingImage(null);
-          transitioningRef.current = false;
-        }, 450);
+        requestAnimationFrame(() => {
+          setTransitionPhase('animate');
+        });
       });
+
+      // Phase 3: clean up after animation completes
+      setTimeout(() => {
+        setTransitionPhase('idle');
+        setOutgoingImage(null);
+        transitioningRef.current = false;
+      }, 480);
     },
     [lightbox, filteredImages]
   );
@@ -399,11 +406,21 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
             onTouchEnd={handleTouchEnd}
           >
             <div className="absolute inset-0 overflow-hidden">
-              {/* Outgoing image (fades out + slides away) */}
-              {transitioning && outgoingImage && (
+              {/* Outgoing image — visible during setup, fades/slides out during animate */}
+              {transitionPhase !== 'idle' && outgoingImage && (
                 <div
-                  className="lightbox-slide-exit absolute inset-0"
-                  data-direction={transitionDirection}
+                  className="absolute inset-0"
+                  style={{
+                    opacity: transitionPhase === 'setup' ? 1 : 0,
+                    transform: transitionPhase === 'setup'
+                      ? 'translateX(0)'
+                      : transitionDirection === 'next'
+                        ? 'translateX(-8%)'
+                        : 'translateX(8%)',
+                    transition: transitionPhase === 'animate'
+                      ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
+                      : 'none',
+                  }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -414,12 +431,22 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
                 </div>
               )}
 
-              {/* Current image (fades in + slides in) */}
+              {/* Current image — positioned off-screen during setup, slides/fades in during animate */}
               <div
-                className={transitioning ? 'lightbox-slide-enter absolute inset-0' : 'absolute inset-0'}
-                data-direction={transitionDirection}
+                className="absolute inset-0"
+                style={transitionPhase !== 'idle' ? {
+                  opacity: transitionPhase === 'setup' ? 0 : 1,
+                  transform: transitionPhase === 'setup'
+                    ? transitionDirection === 'next'
+                      ? 'translateX(8%)'
+                      : 'translateX(-8%)'
+                    : 'translateX(0)',
+                  transition: transitionPhase === 'animate'
+                    ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
+                    : 'none',
+                } : undefined}
               >
-                {transitioning ? (
+                {transitionPhase !== 'idle' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={lightbox.image.src}
@@ -452,8 +479,8 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
             <div
               className="absolute bottom-3 left-0 right-0 text-center z-10"
               style={{
-                opacity: isOpen && !transitioning ? 1 : 0,
-                transform: isOpen && !transitioning ? 'translateY(0)' : 'translateY(10px)',
+                opacity: isOpen && transitionPhase === 'idle' ? 1 : 0,
+                transform: isOpen && transitionPhase === 'idle' ? 'translateY(0)' : 'translateY(10px)',
                 transition: 'all 0.4s ease 0.15s',
               }}
             >
