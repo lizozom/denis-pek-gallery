@@ -31,17 +31,20 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const imageRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
-  // Navigation / slide state
+  // New navigation state
+  const [transitioning, setTransitioning] = useState(false);
   const [outgoingImage, setOutgoingImage] = useState<GalleryImage | null>(null);
-  const [slidePhase, setSlidePhase] = useState<'idle' | 'ready' | 'animating'>('idle');
-  const [slideDirection, setSlideDirection] = useState<'prev' | 'next'>('next');
-  const touchStartRef = useRef<{ x: number } | null>(null);
-  const [swipeOffset, setSwipeOffset] = useState(0);
-  const slidingRef = useRef(false);
+  const [transitionDirection, setTransitionDirection] = useState<'prev' | 'next'>('next');
+  const [controlsVisible, setControlsVisible] = useState(true);
+  const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const transitioningRef = useRef(false);
+
+  // Touch state for mobile swipe
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchDeltaRef = useRef(0);
 
   const filteredImages = images;
 
-  // Compute current index and nav flags
   const currentIndex = useMemo(() => {
     if (!lightbox) return -1;
     return filteredImages.findIndex((img) => img.id === lightbox.image.id);
@@ -49,34 +52,59 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const hasPrev = currentIndex > 0;
   const hasNext = currentIndex >= 0 && currentIndex < filteredImages.length - 1;
 
+  // --- Auto-hide controls logic ---
+  const resetHideTimer = useCallback(() => {
+    setControlsVisible(true);
+    if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    hideTimerRef.current = setTimeout(() => {
+      setControlsVisible(false);
+    }, 1000);
+  }, []);
+
+  // Show controls on any mouse movement or touch
+  useEffect(() => {
+    if (!lightbox || !isOpen) return;
+
+    const onMove = () => resetHideTimer();
+    const onTouch = () => resetHideTimer();
+
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("touchstart", onTouch, { passive: true });
+
+    // Start the initial hide timer
+    resetHideTimer();
+
+    return () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("touchstart", onTouch);
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+    };
+  }, [lightbox, isOpen, resetHideTimer]);
+
+  // --- Navigation ---
   const goToImage = useCallback(
     (direction: 'prev' | 'next') => {
-      if (!lightbox || slidingRef.current) return;
+      if (!lightbox || transitioningRef.current) return;
       const idx = filteredImages.findIndex((img) => img.id === lightbox.image.id);
       const nextIdx = direction === 'prev' ? idx - 1 : idx + 1;
       if (nextIdx < 0 || nextIdx >= filteredImages.length) return;
 
-      slidingRef.current = true;
-      setSlideDirection(direction);
+      transitioningRef.current = true;
+      setTransitioning(true);
+      setTransitionDirection(direction);
       setOutgoingImage(lightbox.image);
-      setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
 
-      // Phase 1: position track off-screen (no transition)
-      setSlidePhase('ready');
-
-      // Phase 2: animate track to final position
+      // Small delay to let outgoing start its exit, then swap
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setSlidePhase('animating');
-        });
-      });
+        setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
 
-      // Phase 3: clean up after animation
-      setTimeout(() => {
-        setSlidePhase('idle');
-        setOutgoingImage(null);
-        slidingRef.current = false;
-      }, 380);
+        // Transition duration matches CSS (450ms)
+        setTimeout(() => {
+          setTransitioning(false);
+          setOutgoingImage(null);
+          transitioningRef.current = false;
+        }, 450);
+      });
     },
     [lightbox, filteredImages]
   );
@@ -135,7 +163,6 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     setIsAnimatingIn(true);
     setIsOpen(false);
     setIsClosing(false);
-    // Trigger the transition to full screen on next frame
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setIsOpen(true);
@@ -147,22 +174,58 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const closeLightbox = useCallback(() => {
     setIsClosing(true);
     setIsOpen(false);
-    // Wait for the closing animation to finish
     setTimeout(() => {
       setLightbox(null);
       setIsClosing(false);
     }, 400);
   }, []);
 
+  // --- Touch handlers for mobile swipe ---
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (transitioningRef.current) return;
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now(),
+    };
+    touchDeltaRef.current = 0;
+  }, []);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (!touchStartRef.current || transitioningRef.current) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+    // Only track horizontal swipes
+    if (Math.abs(dx) > Math.abs(dy)) {
+      e.preventDefault();
+      touchDeltaRef.current = dx;
+    }
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartRef.current) return;
+    const dx = touchDeltaRef.current;
+    const elapsed = Date.now() - touchStartRef.current.time;
+    touchStartRef.current = null;
+    touchDeltaRef.current = 0;
+
+    // Velocity-based or distance-based swipe detection
+    const velocity = Math.abs(dx) / elapsed;
+    const triggered = Math.abs(dx) > 50 || velocity > 0.4;
+
+    if (triggered) {
+      if (dx < 0 && hasNext) goToImage('next');
+      else if (dx > 0 && hasPrev) goToImage('prev');
+    }
+  }, [hasNext, hasPrev, goToImage]);
+
   const visibleImages = filteredImages.slice(0, visibleCount);
   const columnCount = 3;
-
   const columns: GalleryImage[][] = Array.from({ length: columnCount }, () => []);
   visibleImages.forEach((image, index) => {
     columns[index % columnCount].push(image);
   });
 
-  // Calculate the starting transform from thumbnail to center
   const getImageStyle = (): React.CSSProperties => {
     if (!lightbox) return {};
     const { originRect } = lightbox;
@@ -170,7 +233,6 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     const vh = window.innerHeight;
 
     if (isAnimatingIn || isClosing) {
-      // Position at the thumbnail's location
       return {
         position: 'fixed',
         top: originRect.top,
@@ -183,8 +245,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     }
 
     if (isOpen) {
-      // Animate to full screen center
-      const padding = vw * 0.05; // 5% padding
+      const padding = vw * 0.05;
       return {
         position: 'fixed',
         top: padding,
@@ -199,21 +260,11 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     return {};
   };
 
-  // Track style for button/keyboard slide animation
-  const getTrackStyle = (): React.CSSProperties => {
-    if (slidePhase === 'ready') {
-      return {
-        transform: slideDirection === 'next' ? 'translateX(0%)' : 'translateX(-50%)',
-        transition: 'none',
-      };
-    }
-    if (slidePhase === 'animating') {
-      return {
-        transform: slideDirection === 'next' ? 'translateX(-50%)' : 'translateX(0%)',
-        transition: 'transform 350ms cubic-bezier(0.25, 0.1, 0.25, 1)',
-      };
-    }
-    return {};
+  // Controls opacity style
+  const controlStyle: React.CSSProperties = {
+    opacity: controlsVisible ? 1 : 0,
+    transition: 'opacity 0.4s ease',
+    pointerEvents: 'auto',
   };
 
   return (
@@ -287,185 +338,95 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
             }}
           />
 
-          {/* Close button */}
+          {/* Close button — small visual, large touch area, auto-hides */}
           <button
             onClick={closeLightbox}
-            className="fixed top-4 right-4 z-[70] p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
-            style={{
-              opacity: isOpen ? 1 : 0,
-              transition: 'opacity 0.3s ease 0.2s',
-              zIndex: 70,
-            }}
+            className="lightbox-control fixed top-2 right-2 z-[70] flex items-center justify-center"
+            style={controlStyle}
+            aria-label="Close"
           >
-            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            {/* Large invisible touch area */}
+            <span className="absolute inset-0 -m-3" />
+            {/* Small visible icon */}
+            <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 transition-colors">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </span>
           </button>
 
-          {/* Prev arrow */}
+          {/* Prev arrow — small visual, large touch area, auto-hides */}
           {hasPrev && (
             <button
               onClick={() => goToImage('prev')}
-              className="fixed left-4 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
-              style={{
-                opacity: isOpen ? 1 : 0,
-                transition: 'opacity 0.3s ease 0.2s',
-                zIndex: 70,
-              }}
+              className="lightbox-control fixed left-2 top-1/2 -translate-y-1/2 z-[70] flex items-center justify-center"
+              style={controlStyle}
+              aria-label="Previous image"
             >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <span className="absolute inset-0 -m-4" />
+              <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                </svg>
+              </span>
             </button>
           )}
 
-          {/* Next arrow */}
+          {/* Next arrow — small visual, large touch area, auto-hides */}
           {hasNext && (
             <button
               onClick={() => goToImage('next')}
-              className="fixed right-4 top-1/2 -translate-y-1/2 z-[70] hidden md:flex items-center justify-center p-3 rounded-full bg-black/50 text-white/90 hover:text-white hover:bg-black/70 transition-colors pointer-events-auto"
-              style={{
-                opacity: isOpen ? 1 : 0,
-                transition: 'opacity 0.3s ease 0.2s',
-                zIndex: 70,
-              }}
+              className="lightbox-control fixed right-2 top-1/2 -translate-y-1/2 z-[70] flex items-center justify-center"
+              style={controlStyle}
+              aria-label="Next image"
             >
-              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <span className="absolute inset-0 -m-4" />
+              <span className="relative flex items-center justify-center w-9 h-9 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 transition-colors">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                </svg>
+              </span>
             </button>
           )}
 
-          {/* Animated image container */}
+          {/* Image container */}
           <div
             ref={imageRef}
-            style={getImageStyle()}
+            style={{ ...getImageStyle(), touchAction: 'pan-y' }}
             onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => {
-              if (slidingRef.current) return;
-              touchStartRef.current = { x: e.touches[0].clientX };
-              setSwipeOffset(0);
-            }}
-            onTouchMove={(e) => {
-              if (!touchStartRef.current || slidingRef.current) return;
-              const dx = e.touches[0].clientX - touchStartRef.current.x;
-              if (dx < 0 && hasNext) {
-                setSlideDirection('next');
-                setSwipeOffset(dx);
-              } else if (dx > 0 && hasPrev) {
-                setSlideDirection('prev');
-                setSwipeOffset(dx);
-              } else {
-                setSwipeOffset(0);
-              }
-            }}
-            onTouchEnd={() => {
-              if (!touchStartRef.current) return;
-              const offset = swipeOffset;
-              touchStartRef.current = null;
-              setSwipeOffset(0);
-              if (offset < -60 && hasNext) {
-                goToImage('next');
-              } else if (offset > 60 && hasPrev) {
-                goToImage('prev');
-              }
-            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="absolute inset-0 overflow-hidden">
-              {(() => {
-                // Determine if we're sliding (button nav) or swiping (touch drag)
-                const isSliding = outgoingImage && slidePhase !== 'idle';
-                const isSwiping = swipeOffset !== 0;
+              {/* Outgoing image (fades out + slides away) */}
+              {transitioning && outgoingImage && (
+                <div
+                  className="lightbox-slide-exit absolute inset-0"
+                  data-direction={transitionDirection}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={outgoingImage.src}
+                    alt={outgoingImage.alt}
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                </div>
+              )}
 
-                if (isSliding) {
-                  // Button/keyboard navigation: outgoingImage is the old image, lightbox.image is the new one
-                  const oldImg = outgoingImage;
-                  const newImg = lightbox.image;
-                  return (
-                    <div
-                      style={{
-                        position: 'absolute', top: 0, left: 0,
-                        width: '200%', height: '100%', display: 'flex',
-                        ...getTrackStyle(),
-                      }}
-                    >
-                      {slideDirection === 'next' ? (
-                        <>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={oldImg.src} alt={oldImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={newImg.src} alt={newImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={newImg.src} alt={newImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={oldImg.src} alt={oldImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-
-                if (isSwiping) {
-                  // Live touch drag: lightbox.image is still the current image, peek at adjacent
-                  const currentImg = lightbox.image;
-                  const peekIdx = slideDirection === 'next' ? currentIndex + 1 : currentIndex - 1;
-                  const peekImg = filteredImages[peekIdx];
-                  if (!peekImg) return null;
-
-                  // Convert pixel offset to % of track (track is 200% wide, so 50% = one viewport)
-                  const pxToPercent = (swipeOffset / window.innerWidth) * 50;
-
-                  return (
-                    <div
-                      style={{
-                        position: 'absolute', top: 0, left: 0,
-                        width: '200%', height: '100%', display: 'flex',
-                        transform: slideDirection === 'next'
-                          ? `translateX(${Math.min(0, Math.max(-50, pxToPercent))}%)`
-                          : `translateX(${Math.min(0, Math.max(-50, -50 + pxToPercent))}%)`,
-                        transition: 'none',
-                      }}
-                    >
-                      {slideDirection === 'next' ? (
-                        <>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={currentImg.src} alt={currentImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={peekImg.src} alt={peekImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={peekImg.src} alt={peekImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                          <div style={{ width: '50%', height: '100%', position: 'relative', flexShrink: 0 }}>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={currentImg.src} alt={currentImg.alt} className="absolute inset-0 w-full h-full object-contain" />
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                }
-
-                // Static single image (no animation)
-                return (
+              {/* Current image (fades in + slides in) */}
+              <div
+                className={transitioning ? 'lightbox-slide-enter absolute inset-0' : 'absolute inset-0'}
+                data-direction={transitionDirection}
+              >
+                {transitioning ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={lightbox.image.src}
+                    alt={lightbox.image.alt}
+                    className="absolute inset-0 w-full h-full object-contain"
+                  />
+                ) : (
                   <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -483,16 +444,16 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
                       priority
                     />
                   </>
-                );
-              })()}
+                )}
+              </div>
             </div>
 
-            {/* Title — inside image container so it's relative to the image */}
+            {/* Title */}
             <div
               className="absolute bottom-3 left-0 right-0 text-center z-10"
               style={{
-                opacity: isOpen ? 1 : 0,
-                transform: isOpen ? 'translateY(0)' : 'translateY(10px)',
+                opacity: isOpen && !transitioning ? 1 : 0,
+                transform: isOpen && !transitioning ? 'translateY(0)' : 'translateY(10px)',
                 transition: 'all 0.4s ease 0.15s',
               }}
             >
