@@ -92,9 +92,6 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
           <button onClick={() => scrollToSection('about')} className={linkClass}>
             {t.nav.about}
           </button>
-          <button onClick={() => scrollToSection('contact')} className={linkClass}>
-            {t.nav.contact}
-          </button>
         </>
       );
     }
@@ -106,9 +103,6 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
         </Link>
         <Link href={`/${locale}#about`} onClick={() => setMenuOpen(false)} className={linkClass}>
           {t.nav.about}
-        </Link>
-        <Link href={`/${locale}#contact`} onClick={() => setMenuOpen(false)} className={linkClass}>
-          {t.nav.contact}
         </Link>
       </>
     );

@@ -4,7 +4,7 @@ import Navigation from "@/app/components/Navigation";
 import ParallaxBackground from "@/app/components/ParallaxBackground";
 import GallerySection from "@/app/components/GallerySection";
 import AboutSection from "@/app/components/AboutSection";
-import ContactSection from "@/app/components/ContactSection";
+
 import Footer from "@/app/components/Footer";
 
 interface HomeProps {
@@ -30,8 +30,7 @@ export default async function Home({ params }: HomeProps) {
         {/* About Section */}
         <AboutSection locale={locale} />
 
-        {/* Contact Section */}
-        <ContactSection locale={locale} />
+
       </main>
 
       <Footer locale={locale} />

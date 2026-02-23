@@ -83,15 +83,15 @@ export default function GalleryImage({ image, index, onImageClick, isActive }: G
         </div>
       )}
 
-      {/* Image */}
+      {/* Image — Ken Burns hover effect */}
       <Image
         src={image.src}
         alt={image.alt}
         width={800}
         height={800}
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-        className={`w-full h-auto block transition-all duration-500 ${
-          isLoaded ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        className={`w-full h-auto block transition-transform duration-[1200ms] ease-out group-hover:scale-110 group-hover:-translate-x-[2%] group-hover:-translate-y-[2%] ${
+          isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         onLoad={() => setIsLoaded(true)}
         onError={() => setHasError(true)}
