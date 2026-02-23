@@ -13,6 +13,11 @@ export default function Footer({ locale }: FooterProps) {
   return (
     <footer className="border-t border-gray-100 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Contact Heading */}
+        <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${locale === 'en' ? 'italic' : ''} mb-10 text-center`}>
+          {t.contact.title}
+        </h2>
+
         <div className="flex flex-col items-center gap-6 mb-8">
           {/* Social Links */}
           <div className="flex justify-center gap-6">
@@ -20,7 +25,7 @@ export default function Footer({ locale }: FooterProps) {
               href={SOCIAL_LINKS.instagram}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#1A1A1A] hover:text-black transition-colors"
+              className="text-white hover:text-gray-200 transition-colors"
               aria-label="Instagram"
             >
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -31,7 +36,7 @@ export default function Footer({ locale }: FooterProps) {
               href={SOCIAL_LINKS.facebook}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#1A1A1A] hover:text-black transition-colors"
+              className="text-white hover:text-gray-200 transition-colors"
               aria-label="Facebook"
             >
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
@@ -43,7 +48,7 @@ export default function Footer({ locale }: FooterProps) {
           {/* Email */}
           <a
             href={`mailto:${SITE_CONFIG.author.email}`}
-            className="text-sm font-heading font-medium text-[#1A1A1A] hover:text-black transition-colors"
+            className="text-sm font-heading font-medium text-white hover:text-gray-200 transition-colors"
           >
             {SITE_CONFIG.author.email}
           </a>
