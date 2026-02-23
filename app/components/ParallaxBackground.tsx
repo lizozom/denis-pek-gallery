@@ -23,17 +23,9 @@ export default function ParallaxBackground() {
   }, []);
 
   useEffect(() => {
-    // Lock the element height on mount so mobile toolbar show/hide doesn't resize it
-    if (bgRef.current) {
-      bgRef.current.style.height = `${window.innerHeight}px`;
-    }
-
     // Reset stable height on orientation change (genuine viewport change, not address-bar)
     const handleOrientation = () => {
       stableHeightRef.current = 0;
-      if (bgRef.current) {
-        bgRef.current.style.height = `${window.innerHeight}px`;
-      }
       handleScroll();
     };
 
@@ -57,6 +49,7 @@ export default function ParallaxBackground() {
       ref={bgRef}
       className="fixed top-0 left-0 w-full pointer-events-none"
       style={{
+        height: '100lvh',
         backgroundColor: '#909090',
         backgroundImage: 'url(/bg-texture-v2.jpg)',
         backgroundSize: 'auto 150%',
