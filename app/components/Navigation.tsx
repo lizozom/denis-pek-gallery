@@ -92,6 +92,9 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
           <button onClick={() => scrollToSection('about')} className={linkClass}>
             {t.nav.about}
           </button>
+          <button onClick={() => scrollToSection('contact')} className={linkClass}>
+            {t.nav.contact}
+          </button>
         </>
       );
     }
@@ -103,6 +106,9 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
         </Link>
         <Link href={`/${locale}#about`} onClick={() => setMenuOpen(false)} className={linkClass}>
           {t.nav.about}
+        </Link>
+        <Link href={`/${locale}#contact`} onClick={() => setMenuOpen(false)} className={linkClass}>
+          {t.nav.contact}
         </Link>
       </>
     );
@@ -170,19 +176,23 @@ export default function Navigation({ locale, variant = 'transparent' }: Navigati
       </div>
 
       {/* Dropdown Menu — positioned absolutely so it doesn't push the toolbar down */}
-      {menuOpen && (
-        <div
-          className="absolute end-6 lg:end-8 mt-0 w-36 rounded-md overflow-hidden backdrop-blur-md"
-          style={{
-            backgroundColor: isSolid ? 'rgba(255,255,255,0.1)' : 'rgba(17,24,39,0.15)',
-            color: dynamicStyle?.color || (isSolid ? '#4b5563' : 'rgba(255,255,255,0.8)'),
-          }}
-        >
-          <div className="flex flex-col divide-y divide-black/30">
-            {renderNavLinks()}
-          </div>
+      <div
+        className={`absolute end-6 lg:end-8 mt-0 w-36 rounded-md overflow-hidden border border-black transition-all duration-300 ease-out origin-top ${
+          menuOpen
+            ? 'opacity-100 scale-y-100 translate-y-0'
+            : 'opacity-0 scale-y-0 -translate-y-2 pointer-events-none'
+        }`}
+        style={{
+          backgroundColor: 'rgba(224, 222, 222, 0.875)',
+          backdropFilter: 'blur(8px)',
+          WebkitBackdropFilter: 'blur(8px)',
+          color: '#000000',
+        }}
+      >
+        <div className="flex flex-col divide-y divide-black/30">
+          {renderNavLinks()}
         </div>
-      )}
+      </div>
     </header>
   );
 }

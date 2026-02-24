@@ -11,7 +11,7 @@ export default function Footer({ locale }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-gray-100 mt-auto">
+    <footer id="contact" className="border-t border-gray-100 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Contact Heading */}
         <h2 className={`text-4xl sm:text-5xl font-light text-gray-900 tracking-tight ${locale === 'en' ? 'italic' : ''} mb-10 text-center`}>
