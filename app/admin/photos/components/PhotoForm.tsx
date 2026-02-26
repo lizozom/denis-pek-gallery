@@ -55,7 +55,7 @@ export default function PhotoForm({
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     if (!title.trim()) newErrors.title = 'Title is required';
-    if (!alt.trim()) newErrors.alt = 'Alt text is required';
+
     if (!isEditMode && !file) newErrors.file = 'Please select an image';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
@@ -111,7 +111,7 @@ export default function PhotoForm({
 
         <div>
           <label htmlFor="alt" className="block text-sm font-medium text-gray-700 mb-1">
-            Alt Text *
+            Alt Text
           </label>
           <input
             id="alt"
