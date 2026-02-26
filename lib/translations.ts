@@ -44,7 +44,7 @@ export const translations = {
     about: {
       title: 'About',
       subtitle: 'Professional Architectural Photographer',
-      bio: "I don't look at buildings as architecture; I look at them as shapes and patterns. Since I was a child, I've been fascinated by the moment reality breaks down after staring at an occasional pattern on a structure for too long.\n\nMy work is about capturing that specific optical illusion. By stripping away the context of the street and the sky, I isolate the rhythm of the illusion until it becomes something else entirely.\n\nI use tight crops, rotations, and shifts in perspective to create disorientation, yet I never remove the anchor to reality entirely. I want the viewer to lose their balance for a second and let the mind start switching between abstraction and reality.\n\nMy photos are not architecture photography; they are records of how my mind processes the urban environment.",
+      bio: "I don't look at buildings as mere architecture. I see them as shapes and patterns. Since I was a kid, I've been fascinated by the moment reality breaks down after staring at an occasional pattern on a building for too long.\n\nMy work captures that specific optical illusion. By stripping away the context of the street and the sky, I isolate the rhythm of the illusion until it becomes the soul of the frame. I use tight crops, rotations, and shifts in perspective to create disorientation, yet I never remove the anchor to reality entirely. I want the viewer to lose their balance for a second, letting the mind switch between illusion and reality.\n\nMy photos are not architectural photography. They are records of how my mind processes the urban environment.",
       expertise: {
         title: 'Expertise',
         areas: [
