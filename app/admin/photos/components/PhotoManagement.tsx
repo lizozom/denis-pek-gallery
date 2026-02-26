@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import type { GalleryImage } from '@/lib/gallery';
+import type { GalleryImage, MatColor, MatThickness } from '@/lib/gallery';
 import PhotoCard from './PhotoCard';
 import PhotoForm from './PhotoForm';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -76,6 +76,10 @@ export default function PhotoManagement({ initialPhotos }: PhotoManagementProps)
                 alt: formData.get('alt') as string,
                 category: formData.get('category') as string,
                 src: formData.get('src') as string,
+                passepartout_color: (formData.get('passepartout_color') as MatColor) || 'none',
+                passepartout_thickness: (formData.get('passepartout_thickness') as MatThickness) || 'none',
+                frame_color: (formData.get('frame_color') as MatColor) || 'none',
+                frame_thickness: (formData.get('frame_thickness') as MatThickness) || 'none',
               }
             : photo
         ));

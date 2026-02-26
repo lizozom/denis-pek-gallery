@@ -8,7 +8,7 @@ import {
   hideGalleryPhoto,
   reorderGalleryPhotos,
 } from '@/lib/db';
-import type { GalleryImage } from '@/lib/gallery';
+import type { GalleryImage, MatColor, MatThickness } from '@/lib/gallery';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
 
@@ -46,6 +46,10 @@ export async function addPhotoAction(formData: FormData): Promise<ServerActionRe
   const category = sanitizeInput(formData.get('category') as string || '');
   const src = sanitizeInput(formData.get('src') as string || '');
   const hero_eligible = formData.get('hero_eligible') === 'true';
+  const passepartout_color = (formData.get('passepartout_color') as MatColor) || 'none';
+  const passepartout_thickness = (formData.get('passepartout_thickness') as MatThickness) || 'none';
+  const frame_color = (formData.get('frame_color') as MatColor) || 'none';
+  const frame_thickness = (formData.get('frame_thickness') as MatThickness) || 'none';
 
   if (!src) {
     return { success: false, error: 'Image URL is required' };
@@ -55,7 +59,7 @@ export async function addPhotoAction(formData: FormData): Promise<ServerActionRe
     return { success: false, error: 'Invalid image URL' };
   }
 
-  const newImage = await addGalleryPhoto({ title: title || 'Untitled', alt: alt || title || 'Photo', category, src, hero_eligible });
+  const newImage = await addGalleryPhoto({ title: title || 'Untitled', alt: alt || title || 'Photo', category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness });
 
   if (!newImage) {
     return { success: false, error: 'Failed to add photo' };
@@ -78,6 +82,10 @@ export async function updatePhotoAction(
   const category = sanitizeInput(formData.get('category') as string || '');
   const src = sanitizeInput(formData.get('src') as string || '');
   const hero_eligible = formData.get('hero_eligible') === 'true';
+  const passepartout_color = (formData.get('passepartout_color') as MatColor) || 'none';
+  const passepartout_thickness = (formData.get('passepartout_thickness') as MatThickness) || 'none';
+  const frame_color = (formData.get('frame_color') as MatColor) || 'none';
+  const frame_thickness = (formData.get('frame_thickness') as MatThickness) || 'none';
 
   if (!title || !alt || !src) {
     return { success: false, error: 'Title, alt text, and image are required' };
@@ -87,7 +95,7 @@ export async function updatePhotoAction(
     return { success: false, error: 'Invalid image URL' };
   }
 
-  const updates = { title, alt, category, src, hero_eligible };
+  const updates = { title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness };
   const success = await updateGalleryPhoto(id, updates);
 
   if (!success) {

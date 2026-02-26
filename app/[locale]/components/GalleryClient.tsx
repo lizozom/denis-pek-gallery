@@ -1,6 +1,6 @@
 "use client";
 
-import { GalleryImage } from "@/lib/gallery";
+import { GalleryImage, getFrameStyles, getFrameStylesAnimated, getFrameInset } from "@/lib/gallery";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/translations";
@@ -28,6 +28,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const [isAnimatingIn, setIsAnimatingIn] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const [showFrame, setShowFrame] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
 
@@ -179,10 +180,13 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
           setIsAnimatingIn(false);
         });
       });
+      // Show frame after zoom-in animation completes (150ms delay + 550ms animation)
+      setTimeout(() => setShowFrame(true), 600);
     }, 150);
   }, []);
 
   const closeLightbox = useCallback(() => {
+    setShowFrame(false);
     setIsClosing(true);
     setIsOpen(false);
     // Start toolbar fade-in when image is ~80% back
@@ -351,7 +355,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
             onClick={closeLightbox}
             style={{
               backdropFilter: isOpen ? 'blur(12px)' : 'blur(0px)',
-              backgroundColor: isOpen ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0)',
+              backgroundColor: isOpen ? 'rgba(0,0,0,0.4)' : 'rgba(0,0,0,0)',
               transition: 'all 0.5s cubic-bezier(0.05, 0.8, 0.2, 1)',
             }}
           />
@@ -431,14 +435,34 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
                     transition: transitionPhase === 'animate'
                       ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
                       : 'none',
+                    ...(getFrameStyles(outgoingImage) ? {
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    } : {}),
                   }}
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={outgoingImage.src}
-                    alt={outgoingImage.alt}
-                    className="absolute inset-0 w-full h-full object-contain"
-                  />
+                  {getFrameStyles(outgoingImage) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={outgoingImage.src}
+                      alt={outgoingImage.alt}
+                      style={{
+                        display: 'block',
+                        maxWidth: `calc(100% - ${getFrameInset(outgoingImage) * 2}px)`,
+                        maxHeight: `calc(100% - ${getFrameInset(outgoingImage) * 2}px)`,
+                        ...getFrameStyles(outgoingImage)!,
+                        boxSizing: 'content-box',
+                      }}
+                    />
+                  ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={outgoingImage.src}
+                      alt={outgoingImage.alt}
+                      className="absolute inset-0 w-full h-full object-contain"
+                    />
+                  )}
                 </div>
               )}
 
@@ -455,9 +479,31 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
                   transition: transitionPhase === 'animate'
                     ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1), transform 420ms cubic-bezier(0.4, 0, 0.2, 1)'
                     : 'none',
+                  ...(getFrameStyles(lightbox.image) ? {
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  } : {}),
+                } : getFrameStyles(lightbox.image) ? {
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 } : undefined}
               >
-                {transitionPhase !== 'idle' ? (
+                {getFrameStyles(lightbox.image) ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={lightbox.image.src}
+                    alt={lightbox.image.alt}
+                    style={{
+                      display: 'block',
+                      maxWidth: `calc(100% - ${getFrameInset(lightbox.image) * 2}px)`,
+                      maxHeight: `calc(100% - ${getFrameInset(lightbox.image) * 2}px)`,
+                      ...getFrameStylesAnimated(lightbox.image, showFrame)!,
+                      boxSizing: 'content-box',
+                    }}
+                  />
+                ) : transitionPhase !== 'idle' ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={lightbox.image.src}

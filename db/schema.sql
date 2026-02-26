@@ -21,6 +21,18 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'hero_eligible') THEN
     ALTER TABLE gallery_photos ADD COLUMN hero_eligible BOOLEAN NOT NULL DEFAULT false;
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'passepartout_color') THEN
+    ALTER TABLE gallery_photos ADD COLUMN passepartout_color TEXT NOT NULL DEFAULT 'none';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'passepartout_thickness') THEN
+    ALTER TABLE gallery_photos ADD COLUMN passepartout_thickness TEXT NOT NULL DEFAULT 'none';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'frame_color') THEN
+    ALTER TABLE gallery_photos ADD COLUMN frame_color TEXT NOT NULL DEFAULT 'black';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'gallery_photos' AND column_name = 'frame_thickness') THEN
+    ALTER TABLE gallery_photos ADD COLUMN frame_thickness TEXT NOT NULL DEFAULT 'thick';
+  END IF;
 END $$;
 
 -- Index for ordering by position

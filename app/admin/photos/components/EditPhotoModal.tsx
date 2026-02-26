@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import type { GalleryImage } from '@/lib/gallery';
+import type { GalleryImage, MatColor, MatThickness } from '@/lib/gallery';
+import { getFrameStyles } from '@/lib/gallery';
 
 interface EditPhotoModalProps {
   photo: GalleryImage;
@@ -11,6 +12,18 @@ interface EditPhotoModalProps {
   onCancel: () => void;
   isLoading?: boolean;
 }
+
+const COLOR_OPTIONS: { value: MatColor; label: string; swatch: string }[] = [
+  { value: 'none', label: 'None', swatch: 'bg-gray-200 border-dashed' },
+  { value: 'black', label: 'Black', swatch: 'bg-black' },
+  { value: 'white', label: 'White', swatch: 'bg-white border-gray-300' },
+];
+
+const THICKNESS_OPTIONS: { value: MatThickness; label: string }[] = [
+  { value: 'thin', label: 'Thin' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'thick', label: 'Thick' },
+];
 
 export default function EditPhotoModal({
   photo,
@@ -23,6 +36,20 @@ export default function EditPhotoModal({
   const [alt, setAlt] = useState(photo.alt);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isUploading, setIsUploading] = useState(false);
+
+  const [ppColor, setPpColor] = useState<MatColor>(photo.passepartout_color || 'none');
+  const [ppThickness, setPpThickness] = useState<MatThickness>(photo.passepartout_thickness || 'none');
+  const [frameColor, setFrameColor] = useState<MatColor>(photo.frame_color || 'none');
+  const [frameThickness, setFrameThickness] = useState<MatThickness>(photo.frame_thickness || 'none');
+
+  const previewImage: GalleryImage = {
+    ...photo,
+    passepartout_color: ppColor,
+    passepartout_thickness: ppThickness,
+    frame_color: frameColor,
+    frame_thickness: frameThickness,
+  };
+  const frameStyles = getFrameStyles(previewImage);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -55,6 +82,10 @@ export default function EditPhotoModal({
       formData.append('category', '');
       formData.append('src', photo.src);
       formData.append('hero_eligible', 'false');
+      formData.append('passepartout_color', ppColor);
+      formData.append('passepartout_thickness', ppThickness);
+      formData.append('frame_color', frameColor);
+      formData.append('frame_thickness', frameThickness);
 
       await onSave(formData);
     } catch {
@@ -92,15 +123,17 @@ export default function EditPhotoModal({
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Current Image
               </label>
-              <div className="aspect-square w-full rounded-lg overflow-hidden bg-gray-100 border border-gray-200">
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  width={400}
-                  height={400}
-                  className="w-full h-full object-cover"
-                  unoptimized
-                />
+              <div className="w-full rounded-lg overflow-hidden bg-gray-100 border border-gray-200 flex items-center justify-center p-4">
+                <div style={frameStyles || undefined} className="inline-block">
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    width={400}
+                    height={400}
+                    className="block object-cover"
+                    unoptimized
+                  />
+                </div>
               </div>
               <div className="mt-2 text-xs text-gray-500">
                 <p><span className="font-medium">ID:</span> {photo.id}</p>
@@ -140,6 +173,94 @@ export default function EditPhotoModal({
                 />
                 {errors.alt && <p className="mt-1 text-sm text-red-600">{errors.alt}</p>}
               </div>
+
+              {/* Passepartout */}
+              <fieldset className="border border-gray-200 rounded-md p-3">
+                <legend className="text-sm font-medium text-gray-700 px-1">Passepartout (Mat)</legend>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-gray-500">Color</span>
+                    <div className="flex gap-2 mt-1">
+                      {COLOR_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setPpColor(opt.value)}
+                          className={`w-7 h-7 rounded-full border-2 ${opt.swatch} ${
+                            ppColor === opt.value ? 'ring-2 ring-offset-1 ring-blue-500' : ''
+                          }`}
+                          title={opt.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {ppColor !== 'none' && (
+                    <div>
+                      <span className="text-xs text-gray-500">Thickness</span>
+                      <div className="flex gap-2 mt-1">
+                        {THICKNESS_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setPpThickness(opt.value)}
+                            className={`px-3 py-1 text-xs rounded-md border ${
+                              ppThickness === opt.value
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </fieldset>
+
+              {/* Frame */}
+              <fieldset className="border border-gray-200 rounded-md p-3">
+                <legend className="text-sm font-medium text-gray-700 px-1">Frame</legend>
+                <div className="space-y-2">
+                  <div>
+                    <span className="text-xs text-gray-500">Color</span>
+                    <div className="flex gap-2 mt-1">
+                      {COLOR_OPTIONS.map((opt) => (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => setFrameColor(opt.value)}
+                          className={`w-7 h-7 rounded-full border-2 ${opt.swatch} ${
+                            frameColor === opt.value ? 'ring-2 ring-offset-1 ring-blue-500' : ''
+                          }`}
+                          title={opt.label}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {frameColor !== 'none' && (
+                    <div>
+                      <span className="text-xs text-gray-500">Thickness</span>
+                      <div className="flex gap-2 mt-1">
+                        {THICKNESS_OPTIONS.map((opt) => (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => setFrameThickness(opt.value)}
+                            className={`px-3 py-1 text-xs rounded-md border ${
+                              frameThickness === opt.value
+                                ? 'bg-gray-900 text-white border-gray-900'
+                                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </fieldset>
 
             </form>
           </div>

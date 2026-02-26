@@ -11,14 +11,14 @@ export async function getGalleryPhotos(includeHidden = false): Promise<GalleryIm
     let rows;
     if (includeHidden) {
       const result = await sql<GalleryImage>`
-        SELECT id, title, alt, category, src, hero_eligible
+        SELECT id, title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness
         FROM gallery_photos
         ORDER BY position DESC, id DESC
       `;
       rows = result.rows;
     } else {
       const result = await sql<GalleryImage>`
-        SELECT id, title, alt, category, src, hero_eligible
+        SELECT id, title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness
         FROM gallery_photos
         WHERE hidden = false
         ORDER BY position DESC, id DESC
@@ -39,7 +39,7 @@ export async function getGalleryPhotos(includeHidden = false): Promise<GalleryIm
 export async function getHeroPhoto(): Promise<GalleryImage | null> {
   try {
     const { rows } = await sql<GalleryImage>`
-      SELECT id, title, alt, category, src, hero_eligible
+      SELECT id, title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness
       FROM gallery_photos
       WHERE hero_eligible = true AND hidden = false
       ORDER BY position DESC, id DESC
@@ -58,7 +58,7 @@ export async function getHeroPhoto(): Promise<GalleryImage | null> {
 export async function getPhotoById(id: number): Promise<GalleryImage | null> {
   try {
     const { rows } = await sql<GalleryImage>`
-      SELECT id, title, alt, category, src, hero_eligible
+      SELECT id, title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness
       FROM gallery_photos
       WHERE id = ${id}
       LIMIT 1
@@ -84,11 +84,15 @@ export async function addGalleryPhoto(
     `;
     const newPosition = (maxRows[0]?.max_position ?? -1) + 1;
     const heroEligible = photo.hero_eligible ?? false;
+    const ppColor = photo.passepartout_color ?? 'none';
+    const ppThickness = photo.passepartout_thickness ?? 'none';
+    const frColor = photo.frame_color ?? 'none';
+    const frThickness = photo.frame_thickness ?? 'none';
 
     const { rows } = await sql<GalleryImage>`
-      INSERT INTO gallery_photos (title, alt, category, src, position, hero_eligible)
-      VALUES (${photo.title}, ${photo.alt}, ${photo.category}, ${photo.src}, ${newPosition}, ${heroEligible})
-      RETURNING id, title, alt, category, src, hero_eligible
+      INSERT INTO gallery_photos (title, alt, category, src, position, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness)
+      VALUES (${photo.title}, ${photo.alt}, ${photo.category}, ${photo.src}, ${newPosition}, ${heroEligible}, ${ppColor}, ${ppThickness}, ${frColor}, ${frThickness})
+      RETURNING id, title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness
     `;
 
     return rows[0] || null;
@@ -106,7 +110,7 @@ export async function updateGalleryPhoto(
   updates: Partial<Omit<GalleryImage, 'id'>>
 ): Promise<boolean> {
   try {
-    const { title, alt, category, src, hero_eligible } = updates;
+    const { title, alt, category, src, hero_eligible, passepartout_color, passepartout_thickness, frame_color, frame_thickness } = updates;
 
     await sql`
       UPDATE gallery_photos
@@ -115,7 +119,11 @@ export async function updateGalleryPhoto(
         alt = COALESCE(${alt}, alt),
         category = COALESCE(${category}, category),
         src = COALESCE(${src}, src),
-        hero_eligible = COALESCE(${hero_eligible}, hero_eligible)
+        hero_eligible = COALESCE(${hero_eligible}, hero_eligible),
+        passepartout_color = COALESCE(${passepartout_color}, passepartout_color),
+        passepartout_thickness = COALESCE(${passepartout_thickness}, passepartout_thickness),
+        frame_color = COALESCE(${frame_color}, frame_color),
+        frame_thickness = COALESCE(${frame_thickness}, frame_thickness)
       WHERE id = ${id}
     `;
 

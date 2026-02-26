@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import type { GalleryImage } from '@/lib/gallery';
+import type { GalleryImage, MatColor, MatThickness } from '@/lib/gallery';
+import { getFrameStyles } from '@/lib/gallery';
 
 interface PhotoFormProps {
   initialData?: Partial<GalleryImage>;
@@ -11,6 +12,19 @@ interface PhotoFormProps {
   submitLabel: string;
   isLoading?: boolean;
 }
+
+const COLOR_OPTIONS: { value: MatColor; label: string; swatch: string }[] = [
+  { value: 'none', label: 'None', swatch: 'bg-gray-200 border-dashed' },
+  { value: 'black', label: 'Black', swatch: 'bg-black' },
+  { value: 'white', label: 'White', swatch: 'bg-white border-gray-300' },
+];
+
+const THICKNESS_OPTIONS: { value: MatThickness; label: string }[] = [
+  { value: 'none', label: 'None' },
+  { value: 'thin', label: 'Thin' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'thick', label: 'Thick' },
+];
 
 export default function PhotoForm({
   initialData,
@@ -26,6 +40,11 @@ export default function PhotoForm({
   const [file, setFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  const [ppColor, setPpColor] = useState<MatColor>(initialData?.passepartout_color || 'none');
+  const [ppThickness, setPpThickness] = useState<MatThickness>(initialData?.passepartout_thickness || 'none');
+  const [frameColor, setFrameColor] = useState<MatColor>(initialData?.frame_color || 'black');
+  const [frameThickness, setFrameThickness] = useState<MatThickness>(initialData?.frame_thickness || 'thick');
 
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
   const MAX_SIZE = 10 * 1024 * 1024;
@@ -50,6 +69,20 @@ export default function PhotoForm({
       if (!title) setTitle(selectedFile.name.replace(/\.[^/.]+$/, ''));
     }
   };
+
+  // Build a preview image object for getFrameStyles
+  const previewImage: GalleryImage = {
+    id: 0,
+    src: previewUrl || initialData?.src || '',
+    alt: '',
+    title: '',
+    category: '',
+    passepartout_color: ppColor,
+    passepartout_thickness: ppThickness,
+    frame_color: frameColor,
+    frame_thickness: frameThickness,
+  };
+  const frameStyles = getFrameStyles(previewImage);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +115,10 @@ export default function PhotoForm({
       formData.append('category', '');
       formData.append('src', url);
       formData.append('hero_eligible', 'false');
+      formData.append('passepartout_color', ppColor);
+      formData.append('passepartout_thickness', ppThickness);
+      formData.append('frame_color', frameColor);
+      formData.append('frame_thickness', frameThickness);
       await onSubmit(formData);
     } catch {
       setErrors({ file: 'Failed to upload image' });
@@ -89,6 +126,9 @@ export default function PhotoForm({
       setIsUploading(false);
     }
   };
+
+  const showImagePreview = previewUrl || (isEditMode && initialData?.src);
+  const imageSrc = previewUrl || initialData?.src || '';
 
   return (
     <form onSubmit={handleSubmit} className="bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -138,13 +178,108 @@ export default function PhotoForm({
             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-gray-500 focus:border-gray-500 disabled:opacity-50 disabled:cursor-not-allowed file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
           />
           {errors.file && <p className="mt-1 text-sm text-red-600">{errors.file}</p>}
-          {previewUrl && (
-            <div className="mt-3">
-              <Image src={previewUrl} alt="Preview" width={200} height={200} className="rounded-lg object-cover" unoptimized />
+          {showImagePreview && (
+            <div className="mt-3 inline-block">
+              <div style={frameStyles || undefined} className="inline-block">
+                <Image src={imageSrc} alt="Preview" width={200} height={200} className="rounded-sm object-cover block" unoptimized />
+              </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Passepartout & Frame options */}
+      {showImagePreview && (
+        <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          {/* Passepartout */}
+          <fieldset className="border border-gray-200 rounded-md p-4">
+            <legend className="text-sm font-medium text-gray-700 px-1">Passepartout (Mat)</legend>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs text-gray-500">Color</span>
+                <div className="flex gap-2 mt-1">
+                  {COLOR_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPpColor(opt.value)}
+                      className={`w-8 h-8 rounded-full border-2 ${opt.swatch} ${
+                        ppColor === opt.value ? 'ring-2 ring-offset-1 ring-blue-500' : ''
+                      }`}
+                      title={opt.label}
+                    />
+                  ))}
+                </div>
+              </div>
+              {ppColor !== 'none' && (
+                <div>
+                  <span className="text-xs text-gray-500">Thickness</span>
+                  <div className="flex gap-2 mt-1">
+                    {THICKNESS_OPTIONS.filter((t) => t.value !== 'none').map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setPpThickness(opt.value)}
+                        className={`px-3 py-1 text-xs rounded-md border ${
+                          ppThickness === opt.value
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </fieldset>
+
+          {/* Frame */}
+          <fieldset className="border border-gray-200 rounded-md p-4">
+            <legend className="text-sm font-medium text-gray-700 px-1">Frame</legend>
+            <div className="space-y-3">
+              <div>
+                <span className="text-xs text-gray-500">Color</span>
+                <div className="flex gap-2 mt-1">
+                  {COLOR_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setFrameColor(opt.value)}
+                      className={`w-8 h-8 rounded-full border-2 ${opt.swatch} ${
+                        frameColor === opt.value ? 'ring-2 ring-offset-1 ring-blue-500' : ''
+                      }`}
+                      title={opt.label}
+                    />
+                  ))}
+                </div>
+              </div>
+              {frameColor !== 'none' && (
+                <div>
+                  <span className="text-xs text-gray-500">Thickness</span>
+                  <div className="flex gap-2 mt-1">
+                    {THICKNESS_OPTIONS.filter((t) => t.value !== 'none').map((opt) => (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => setFrameThickness(opt.value)}
+                        className={`px-3 py-1 text-xs rounded-md border ${
+                          frameThickness === opt.value
+                            ? 'bg-gray-900 text-white border-gray-900'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </fieldset>
+        </div>
+      )}
 
       <div className="mt-6 flex justify-end gap-3">
         <button type="button" onClick={onCancel} disabled={isLoading || isUploading} className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
