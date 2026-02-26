@@ -240,11 +240,6 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   }, [hasNext, hasPrev, goToImage]);
 
   const visibleImages = filteredImages.slice(0, visibleCount);
-  const columnCount = 4;
-  const columns: GalleryImage[][] = Array.from({ length: columnCount }, () => []);
-  visibleImages.forEach((image, index) => {
-    columns[index % columnCount].push(image);
-  });
 
   const getImageStyle = (): React.CSSProperties => {
     if (!lightbox) return {};
@@ -292,25 +287,24 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     <>
       <main className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {isInitialLoad && images.length === 0 ? (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="columns-2 lg:columns-4 gap-4">
             {Array.from({ length: 9 }).map((_, i) => (
-              <ImageSkeleton key={i} aspectRatio={i % 3 === 0 ? 'portrait' : 'square'} />
+              <div key={i} className="mb-4 break-inside-avoid">
+                <ImageSkeleton aspectRatio={i % 3 === 0 ? 'portrait' : 'square'} />
+              </div>
             ))}
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {columns.map((column, columnIndex) => (
-                <div key={columnIndex} className="flex flex-col gap-4">
-                  {column.map((image, imageIndex) => (
-                    <GalleryImageComponent
-                      key={image.id}
-                      image={image}
-                      index={columnIndex * columnCount + imageIndex}
-                      onImageClick={handleImageClick}
-                      isActive={!!lightbox && !isClosing && lightbox.image.id === image.id}
-                    />
-                  ))}
+            <div className="columns-2 lg:columns-4 gap-4 [column-fill:balance]">
+              {visibleImages.map((image, index) => (
+                <div key={image.id} className="mb-4 break-inside-avoid">
+                  <GalleryImageComponent
+                    image={image}
+                    index={index}
+                    onImageClick={handleImageClick}
+                    isActive={!!lightbox && !isClosing && lightbox.image.id === image.id}
+                  />
                 </div>
               ))}
             </div>
