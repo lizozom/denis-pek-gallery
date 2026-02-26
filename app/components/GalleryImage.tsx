@@ -83,14 +83,13 @@ export default function GalleryImage({ image, index, onImageClick, isActive }: G
         </div>
       )}
 
-      {/* Image — Ken Burns hover effect */}
       <Image
         src={image.src}
         alt={image.alt}
         width={800}
         height={800}
         sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 25vw"
-        className={`w-full h-auto block transition-transform duration-[1200ms] ease-out group-hover:scale-110 group-hover:-translate-x-[2%] group-hover:-translate-y-[2%] ${
+        className={`w-full h-auto block transition-[filter] duration-300 group-hover:brightness-[1.15] ${
           isLoaded ? 'opacity-100' : 'opacity-0'
         }`}
         onLoad={() => setIsLoaded(true)}
@@ -99,14 +98,6 @@ export default function GalleryImage({ image, index, onImageClick, isActive }: G
         quality={85}
       />
 
-      {/* Hover overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-end justify-start p-6">
-        <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-          <h3 className="text-white text-lg sm:text-xl font-light tracking-wide">
-            {image.title}
-          </h3>
-        </div>
-      </div>
     </div>
   );
 }
