@@ -152,7 +152,8 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lightbox, goToImage]);
 
-  // Preload adjacent images
+  // Preload adjacent images (safety net in case the full background preload below
+  // hasn't reached this pair yet, e.g. on a slow connection)
   useEffect(() => {
     if (!lightbox || currentIndex < 0) return;
     const toPreload: string[] = [];
@@ -163,6 +164,43 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       img.src = src;
     });
   }, [lightbox, currentIndex, filteredImages]);
+
+  // Background preload: warm the browser cache with every full-size photo as soon as
+  // the gallery loads, so opening the lightbox and paging through it never waits on
+  // the network. Runs a handful of downloads at a time during browser idle moments so
+  // it never competes with scrolling or the visible thumbnail grid.
+  // NOTE: this eagerly downloads the ENTIRE gallery regardless of how far a visitor
+  // scrolls. Fine while the gallery is small; if it grows much larger, switch this to
+  // a scroll-proximity preload (only fetch full-size photos near what's on screen)
+  // to avoid wasting data on photos visitors never reach.
+  useEffect(() => {
+    if (typeof window === "undefined" || images.length === 0) return;
+    const connection = (navigator as unknown as { connection?: { saveData?: boolean } }).connection;
+    if (connection?.saveData) return;
+
+    const PRELOAD_CONCURRENCY = 4;
+    let cancelled = false;
+    let cursor = 0;
+
+    const schedule = (fn: () => void) => {
+      const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
+      if (ric) ric(fn, { timeout: 2000 });
+      else setTimeout(fn, 200);
+    };
+
+    const loadNext = () => {
+      if (cancelled || cursor >= images.length) return;
+      const img = new window.Image();
+      img.onload = img.onerror = () => schedule(loadNext);
+      img.src = images[cursor++].src;
+    };
+
+    for (let i = 0; i < PRELOAD_CONCURRENCY; i++) schedule(loadNext);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [images]);
 
   const handleImageClick = useCallback((image: GalleryImage, rect: DOMRect) => {
     // Step 1: fade toolbar out first
