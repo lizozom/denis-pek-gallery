@@ -47,12 +47,50 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
 
   const filteredImages = images;
 
+  // The grid below is a CSS masonry layout: it fills each column top-to-bottom before
+  // moving to the next one, so raw data order does NOT match on-screen row order.
+  // visualOrder re-derives navigation order from each thumbnail's actual position
+  // (top, then left) so "next"/"prev" follow what a visitor actually sees on screen.
+  const [visualOrder, setVisualOrder] = useState<GalleryImage[]>(images);
+
+  const computeVisualOrder = useCallback((): GalleryImage[] => {
+    const container = gridContainerRef.current;
+    if (!container) return images;
+
+    const byId = new Map(images.map((img) => [img.id, img]));
+    const renderedIds = new Set<number>();
+    const positioned = Array.from(container.querySelectorAll<HTMLElement>("[data-image-id]"))
+      .map((el) => {
+        const rect = el.getBoundingClientRect();
+        return { id: Number(el.getAttribute("data-image-id")), top: rect.top, left: rect.left };
+      })
+      .sort((a, b) => (Math.abs(a.top - b.top) > 4 ? a.top - b.top : a.left - b.left));
+    positioned.forEach((p) => renderedIds.add(p.id));
+    const ordered = positioned.map((p) => byId.get(p.id)).filter((img): img is GalleryImage => !!img);
+
+    // Thumbnails not yet rendered (later infinite-scroll batches) keep natural order
+    const rest = images.filter((img) => !renderedIds.has(img.id));
+    return [...ordered, ...rest];
+  }, [images]);
+
+  // Recompute whenever more thumbnails render (infinite scroll) or the layout changes
+  // column count (the grid switches from 2 to 4 columns at the lg breakpoint)
+  useEffect(() => {
+    setVisualOrder(computeVisualOrder());
+  }, [computeVisualOrder, visibleCount]);
+
+  useEffect(() => {
+    const onResize = () => setVisualOrder(computeVisualOrder());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [computeVisualOrder]);
+
   const currentIndex = useMemo(() => {
     if (!lightbox) return -1;
-    return filteredImages.findIndex((img) => img.id === lightbox.image.id);
-  }, [lightbox, filteredImages]);
+    return visualOrder.findIndex((img) => img.id === lightbox.image.id);
+  }, [lightbox, visualOrder]);
   const hasPrev = currentIndex > 0;
-  const hasNext = currentIndex >= 0 && currentIndex < filteredImages.length - 1;
+  const hasNext = currentIndex >= 0 && currentIndex < visualOrder.length - 1;
 
   // --- Auto-hide controls logic ---
   const resetHideTimer = useCallback(() => {
@@ -89,14 +127,14 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const goToImage = useCallback(
     (direction: 'prev' | 'next') => {
       if (!lightbox || transitioningRef.current) return;
-      const idx = filteredImages.findIndex((img) => img.id === lightbox.image.id);
+      const idx = visualOrder.findIndex((img) => img.id === lightbox.image.id);
       const nextIdx = direction === 'prev' ? idx - 1 : idx + 1;
-      if (nextIdx < 0 || nextIdx >= filteredImages.length) return;
+      if (nextIdx < 0 || nextIdx >= visualOrder.length) return;
 
       transitioningRef.current = true;
       setTransitionDirection(direction);
       setOutgoingImage(lightbox.image);
-      setLightbox({ image: filteredImages[nextIdx], originRect: lightbox.originRect });
+      setLightbox({ image: visualOrder[nextIdx], originRect: lightbox.originRect });
 
       // Phase 1: 'setup' — render both images, incoming positioned off-screen, no transition
       setTransitionPhase('setup');
@@ -115,7 +153,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
         transitioningRef.current = false;
       }, 480);
     },
-    [lightbox, filteredImages]
+    [lightbox, visualOrder]
   );
 
   useEffect(() => {
@@ -158,13 +196,13 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   useEffect(() => {
     if (!lightbox || currentIndex < 0) return;
     const toPreload: string[] = [];
-    if (currentIndex > 0) toPreload.push(filteredImages[currentIndex - 1].src);
-    if (currentIndex < filteredImages.length - 1) toPreload.push(filteredImages[currentIndex + 1].src);
+    if (currentIndex > 0) toPreload.push(visualOrder[currentIndex - 1].src);
+    if (currentIndex < visualOrder.length - 1) toPreload.push(visualOrder[currentIndex + 1].src);
     toPreload.forEach((src) => {
       const img = new window.Image();
       img.src = src;
     });
-  }, [lightbox, currentIndex, filteredImages]);
+  }, [lightbox, currentIndex, visualOrder]);
 
   // Background preload: warm the browser cache with every full-size photo so opening
   // the lightbox and paging through it never waits on the network. Runs a handful of
@@ -195,31 +233,9 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       else setTimeout(fn, 200);
     };
 
-    const buildPreloadOrder = (): string[] => {
-      const container = gridContainerRef.current;
-      const renderedIds = new Set<number>();
-      let visualOrder: string[] = [];
-
-      if (container) {
-        const srcById = new Map(images.map((img) => [img.id, img.src]));
-        const positioned = Array.from(container.querySelectorAll<HTMLElement>("[data-image-id]"))
-          .map((el) => {
-            const rect = el.getBoundingClientRect();
-            return { id: Number(el.getAttribute("data-image-id")), top: rect.top, left: rect.left };
-          })
-          .sort((a, b) => (Math.abs(a.top - b.top) > 4 ? a.top - b.top : a.left - b.left));
-        positioned.forEach((p) => renderedIds.add(p.id));
-        visualOrder = positioned.map((p) => srcById.get(p.id)).filter((s): s is string => !!s);
-      }
-
-      // Thumbnails not yet rendered (later infinite-scroll batches) keep natural order
-      const rest = images.filter((img) => !renderedIds.has(img.id)).map((img) => img.src);
-      return [...visualOrder, ...rest];
-    };
-
     const startPreloading = () => {
       if (cancelled) return;
-      const order = buildPreloadOrder();
+      const order = computeVisualOrder().map((img) => img.src);
       let cursor = 0;
       const loadNext = () => {
         if (cancelled || cursor >= order.length) return;
@@ -243,7 +259,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       cancelled = true;
       window.removeEventListener("load", beginAfterPageLoad);
     };
-  }, [images]);
+  }, [images, computeVisualOrder]);
 
   const handleImageClick = useCallback((image: GalleryImage, rect: DOMRect) => {
     // Step 1: fade toolbar out first
