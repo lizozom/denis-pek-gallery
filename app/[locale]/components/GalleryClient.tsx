@@ -31,6 +31,7 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
   const [showFrame, setShowFrame] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<HTMLDivElement>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   // Navigation state — two-phase approach for reliable animation
   const [transitionPhase, setTransitionPhase] = useState<'idle' | 'setup' | 'animate'>('idle');
@@ -165,10 +166,17 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
     });
   }, [lightbox, currentIndex, filteredImages]);
 
-  // Background preload: warm the browser cache with every full-size photo as soon as
-  // the gallery loads, so opening the lightbox and paging through it never waits on
-  // the network. Runs a handful of downloads at a time during browser idle moments so
-  // it never competes with scrolling or the visible thumbnail grid.
+  // Background preload: warm the browser cache with every full-size photo so opening
+  // the lightbox and paging through it never waits on the network. Runs a handful of
+  // downloads at a time during browser idle moments so it never competes with active
+  // scrolling. Two things are deliberate here:
+  // 1. It waits for the page's own `load` event (background texture + visible
+  //    thumbnails finished) before starting, so that initial content gets the full
+  //    connection to itself instead of racing 4 background downloads for bandwidth.
+  // 2. It orders the queue by each thumbnail's actual on-screen position (top, then
+  //    left) rather than raw array order — the CSS masonry grid fills each column
+  //    top-to-bottom before moving to the next one, so array order alone would finish
+  //    all of column 1 before touching column 2 instead of following visual rows.
   // NOTE: this eagerly downloads the ENTIRE gallery regardless of how far a visitor
   // scrolls. Fine while the gallery is small; if it grows much larger, switch this to
   // a scroll-proximity preload (only fetch full-size photos near what's on screen)
@@ -180,7 +188,6 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
 
     const PRELOAD_CONCURRENCY = 4;
     let cancelled = false;
-    let cursor = 0;
 
     const schedule = (fn: () => void) => {
       const ric = (window as unknown as { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => void }).requestIdleCallback;
@@ -188,17 +195,53 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
       else setTimeout(fn, 200);
     };
 
-    const loadNext = () => {
-      if (cancelled || cursor >= images.length) return;
-      const img = new window.Image();
-      img.onload = img.onerror = () => schedule(loadNext);
-      img.src = images[cursor++].src;
+    const buildPreloadOrder = (): string[] => {
+      const container = gridContainerRef.current;
+      const renderedIds = new Set<number>();
+      let visualOrder: string[] = [];
+
+      if (container) {
+        const srcById = new Map(images.map((img) => [img.id, img.src]));
+        const positioned = Array.from(container.querySelectorAll<HTMLElement>("[data-image-id]"))
+          .map((el) => {
+            const rect = el.getBoundingClientRect();
+            return { id: Number(el.getAttribute("data-image-id")), top: rect.top, left: rect.left };
+          })
+          .sort((a, b) => (Math.abs(a.top - b.top) > 4 ? a.top - b.top : a.left - b.left));
+        positioned.forEach((p) => renderedIds.add(p.id));
+        visualOrder = positioned.map((p) => srcById.get(p.id)).filter((s): s is string => !!s);
+      }
+
+      // Thumbnails not yet rendered (later infinite-scroll batches) keep natural order
+      const rest = images.filter((img) => !renderedIds.has(img.id)).map((img) => img.src);
+      return [...visualOrder, ...rest];
     };
 
-    for (let i = 0; i < PRELOAD_CONCURRENCY; i++) schedule(loadNext);
+    const startPreloading = () => {
+      if (cancelled) return;
+      const order = buildPreloadOrder();
+      let cursor = 0;
+      const loadNext = () => {
+        if (cancelled || cursor >= order.length) return;
+        const img = new window.Image();
+        img.onload = img.onerror = () => schedule(loadNext);
+        img.src = order[cursor++];
+      };
+      for (let i = 0; i < PRELOAD_CONCURRENCY; i++) schedule(loadNext);
+    };
+
+    // Give the grid a moment to finish laying out before measuring positions
+    const beginAfterPageLoad = () => requestAnimationFrame(() => requestAnimationFrame(startPreloading));
+
+    if (document.readyState === "complete") {
+      beginAfterPageLoad();
+    } else {
+      window.addEventListener("load", beginAfterPageLoad, { once: true });
+    }
 
     return () => {
       cancelled = true;
+      window.removeEventListener("load", beginAfterPageLoad);
     };
   }, [images]);
 
@@ -334,9 +377,9 @@ export default function GalleryClient({ images, locale }: GalleryClientProps) {
           </div>
         ) : (
           <>
-            <div className="columns-2 lg:columns-4 gap-4 [column-fill:balance]">
+            <div ref={gridContainerRef} className="columns-2 lg:columns-4 gap-4 [column-fill:balance]">
               {visibleImages.map((image, index) => (
-                <div key={image.id} className="mb-4 break-inside-avoid">
+                <div key={image.id} data-image-id={image.id} className="mb-4 break-inside-avoid">
                   <GalleryImageComponent
                     image={image}
                     index={index}
